@@ -1,7 +1,6 @@
 package com.torquelab.autoservice.shared.navigation
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -12,10 +11,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.torquelab.autoservice.R
 import com.torquelab.autoservice.shared.session.SessionViewModel
 import com.torquelab.autoservice.shared.ui.components.AuthenticatedScaffold
+import com.torquelab.autoservice.shared.ui.components.AutoServiceConfirmationDialog
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedModuleContent
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedNavigationItem
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedSection
@@ -36,6 +38,10 @@ fun HomePlaceholderRoute(
         mutableStateOf(initialDestinationKey)
     }
 
+    var showLogoutDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
     LaunchedEffect(uiState.isLoggedOut) {
         if (uiState.isLoggedOut) {
             viewModel.consumeLogout()
@@ -47,12 +53,47 @@ fun HomePlaceholderRoute(
         title = title,
         navigationItems = navigationItems,
         selectedDestinationKey = selectedDestinationKey,
+
         onDestinationSelected = { destinationKey ->
             selectedDestinationKey = destinationKey
         },
+
         isLoggingOut = uiState.isLoggingOut,
-        onLogoutClick = viewModel::logout
+
+        onLogoutClick = {
+            showLogoutDialog = true
+        }
     )
+
+    if (showLogoutDialog) {
+
+        AutoServiceConfirmationDialog(
+            title = stringResource(
+                R.string.logout_dialog_title
+            ),
+
+            message = stringResource(
+                R.string.logout_dialog_message
+            ),
+
+            confirmText = stringResource(
+                R.string.logout_dialog_confirm
+            ),
+
+            dismissText = stringResource(
+                R.string.common_cancel
+            ),
+
+            onConfirm = {
+                showLogoutDialog = false
+                viewModel.logout()
+            },
+
+            onDismiss = {
+                showLogoutDialog = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -70,21 +111,20 @@ fun HomePlaceholderScreen(
         selectedDestinationKey = selectedDestinationKey,
         onDestinationSelected = onDestinationSelected,
         onSignOut = onLogoutClick,
-        isLoggingOut = isLoggingOut,
-        content = { innerPadding: PaddingValues ->
+        isLoggingOut = isLoggingOut
+    ) { innerPadding ->
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                AuthenticatedModuleContent(
-                    destinationKey =
-                        selectedDestinationKey
-                )
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            AuthenticatedModuleContent(
+                destinationKey =
+                    selectedDestinationKey
+            )
         }
-    )
+    }
 }
 
 @Preview(
@@ -93,7 +133,9 @@ fun HomePlaceholderScreen(
 )
 @Composable
 private fun AdminHomePlaceholderPreview() {
+
     AutoServiceTheme {
+
         HomePlaceholderScreen(
             title = "Admin Dashboard",
             navigationItems =
@@ -113,7 +155,9 @@ private fun AdminHomePlaceholderPreview() {
 )
 @Composable
 private fun MechanicHomePlaceholderPreview() {
+
     AutoServiceTheme {
+
         HomePlaceholderScreen(
             title = "Mechanic Workspace",
             navigationItems =

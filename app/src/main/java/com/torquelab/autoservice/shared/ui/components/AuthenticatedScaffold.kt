@@ -89,7 +89,7 @@ fun AuthenticatedScaffold(
                         icon = {
                             Icon(
                                 imageVector = item.icon,
-                                contentDescription = label
+                                contentDescription = null
                             )
                         },
 
