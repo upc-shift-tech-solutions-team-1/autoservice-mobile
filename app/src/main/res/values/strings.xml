@@ -48,4 +48,15 @@
     <string name="admin_home_title">Admin Dashboard</string>
     <string name="mechanic_home_title">Mechanic Workspace</string>
 
+    <!-- Authenticated navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_vehicles">Vehicles</string>
+    <string name="nav_work_orders">Work Orders</string>
+    <string name="nav_inventory">Inventory</string>
+    <string name="nav_workspace">Workspace</string>
+
+    <!-- Temporary authenticated content -->
+    <string name="placeholder_module">Current section: %1$s</string>
+    <string name="placeholder_module_description">This area will be replaced by the corresponding mobile feature.</string>
+
 </resources>

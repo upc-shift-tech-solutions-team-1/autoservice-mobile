@@ -9,14 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,12 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.torquelab.autoservice.R
+import com.torquelab.autoservice.auth.presentation.stringResourceId
+import com.torquelab.autoservice.shared.ui.components.AutoServiceErrorText
+import com.torquelab.autoservice.shared.ui.components.AutoServicePasswordField
+import com.torquelab.autoservice.shared.ui.components.AutoServicePrimaryButton
+import com.torquelab.autoservice.shared.ui.components.AutoServiceTextField
 import com.torquelab.autoservice.ui.theme.AutoServiceTheme
 
 @Composable
@@ -44,11 +41,8 @@ fun LoginRoute(
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.isLoginSuccessful) {
-
         if (uiState.isLoginSuccessful) {
-
             viewModel.consumeLoginSuccess()
-
             onLoginSuccess()
         }
     }
@@ -73,7 +67,6 @@ fun LoginScreen(
     onSignIn: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -81,17 +74,14 @@ fun LoginScreen(
                 WindowInsets.safeDrawing
             )
             .padding(horizontal = 24.dp),
-        verticalArrangement =
-            Arrangement.Center
+        verticalArrangement = Arrangement.Center
     ) {
 
         Text(
-            text =
-                stringResource(
-                    R.string.login_title
-                ),
-            style =
-                MaterialTheme.typography.headlineLarge
+            text = stringResource(
+                R.string.login_title
+            ),
+            style = MaterialTheme.typography.headlineLarge
         )
 
         Spacer(
@@ -99,12 +89,10 @@ fun LoginScreen(
         )
 
         Text(
-            text =
-                stringResource(
-                    R.string.login_welcome_back
-                ),
-            style =
-                MaterialTheme.typography.titleMedium,
+            text = stringResource(
+                R.string.login_welcome_back
+            ),
+            style = MaterialTheme.typography.titleMedium,
             color =
                 MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -113,119 +101,50 @@ fun LoginScreen(
             modifier = Modifier.height(32.dp)
         )
 
-        OutlinedTextField(
+        AutoServiceTextField(
             value = uiState.email,
             onValueChange = onEmailChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-
-                Text(
-                    stringResource(
-                        R.string.login_email
-                    )
-                )
-            },
-            singleLine = true,
+            label = stringResource(
+                R.string.login_email
+            ),
             enabled = !uiState.isLoading,
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType =
-                        KeyboardType.Email,
-                    imeAction =
-                        ImeAction.Next
-                )
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next
         )
 
         Spacer(
             modifier = Modifier.height(16.dp)
         )
 
-        OutlinedTextField(
+        AutoServicePasswordField(
             value = uiState.password,
             onValueChange = onPasswordChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-
-                Text(
-                    stringResource(
-                        R.string.login_password
-                    )
-                )
-            },
-            singleLine = true,
+            label = stringResource(
+                R.string.login_password
+            ),
+            isPasswordVisible =
+                uiState.isPasswordVisible,
+            onTogglePasswordVisibility =
+                onTogglePasswordVisibility,
             enabled = !uiState.isLoading,
-
-            visualTransformation =
-                if (
-                    uiState.isPasswordVisible
-                ) {
-
-                    VisualTransformation.None
-
-                } else {
-
-                    PasswordVisualTransformation()
-                },
-
-            trailingIcon = {
-
-                TextButton(
-                    onClick =
-                        onTogglePasswordVisibility
-                ) {
-
-                    Text(
-                        text =
-                            if (
-                                uiState.isPasswordVisible
-                            ) {
-
-                                stringResource(
-                                    R.string.common_hide
-                                )
-
-                            } else {
-
-                                stringResource(
-                                    R.string.common_show
-                                )
-                            }
-                    )
+            imeAction = ImeAction.Done,
+            onDone = {
+                if (!uiState.isLoading) {
+                    onSignIn()
                 }
-            },
-
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType =
-                        KeyboardType.Password,
-                    imeAction =
-                        ImeAction.Done
-                ),
-
-            keyboardActions =
-                KeyboardActions(
-                    onDone = {
-
-                        if (!uiState.isLoading) {
-                            onSignIn()
-                        }
-                    }
-                )
+            }
         )
 
-        if (uiState.errorMessage != null) {
+        uiState.error?.let { error ->
 
             Spacer(
-                modifier =
-                    Modifier.height(12.dp)
+                modifier = Modifier.height(12.dp)
             )
 
-            Text(
-                text = uiState.errorMessage,
-                color =
-                    MaterialTheme.colorScheme.error,
-                style =
-                    MaterialTheme.typography.bodyMedium
+            AutoServiceErrorText(
+                text = stringResource(
+                    error.stringResourceId()
+                )
             )
         }
 
@@ -233,32 +152,13 @@ fun LoginScreen(
             modifier = Modifier.height(24.dp)
         )
 
-        Button(
+        AutoServicePrimaryButton(
+            text = stringResource(
+                R.string.login_sign_in
+            ),
             onClick = onSignIn,
-            modifier =
-                Modifier.fillMaxWidth(),
-            enabled =
-                !uiState.isLoading
-        ) {
-
-            if (uiState.isLoading) {
-
-                CircularProgressIndicator(
-                    modifier =
-                        Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
-
-            } else {
-
-                Text(
-                    text =
-                        stringResource(
-                            R.string.login_sign_in
-                        )
-                )
-            }
-        }
+            isLoading = uiState.isLoading
+        )
 
         Spacer(
             modifier = Modifier.height(16.dp)
@@ -266,17 +166,13 @@ fun LoginScreen(
 
         TextButton(
             onClick = onRegisterClick,
-            modifier =
-                Modifier.fillMaxWidth(),
-            enabled =
-                !uiState.isLoading
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
         ) {
-
             Text(
-                text =
-                    stringResource(
-                        R.string.login_create_workshop
-                    )
+                text = stringResource(
+                    R.string.login_create_workshop
+                )
             )
         }
     }
@@ -292,13 +188,10 @@ private fun LoginScreenPreview() {
     AutoServiceTheme {
 
         LoginScreen(
-            uiState =
-                LoginUiState(
-                    email =
-                        "admin@autoservice.com",
-                    password =
-                        "password"
-                ),
+            uiState = LoginUiState(
+                email = "admin@autoservice.com",
+                password = "password"
+            ),
             onEmailChange = {},
             onPasswordChange = {},
             onTogglePasswordVisibility = {},

@@ -46,4 +46,15 @@
     <string name="error_unexpected_authentication">Ocurrió un error inesperado durante la autenticación.</string>
     <string name="admin_home_title">Panel de administración</string>
     <string name="mechanic_home_title">Espacio de trabajo del mecánico</string>
+
+    <!-- Authenticated navigation -->
+    <string name="nav_dashboard">Panel</string>
+    <string name="nav_vehicles">Vehículos</string>
+    <string name="nav_work_orders">Órdenes</string>
+    <string name="nav_inventory">Inventario</string>
+    <string name="nav_workspace">Trabajo</string>
+
+    <!-- Temporary authenticated content -->
+    <string name="placeholder_module">Sección actual: %1$s</string>
+    <string name="placeholder_module_description">Esta área será reemplazada por el módulo móvil correspondiente.</string>
 </resources>

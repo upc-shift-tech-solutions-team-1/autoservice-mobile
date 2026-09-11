@@ -3,6 +3,7 @@ package com.torquelab.autoservice.auth.presentation.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.torquelab.autoservice.auth.domain.repository.AuthRepository
+import com.torquelab.autoservice.auth.presentation.AuthUiError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ class RegisterViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(RegisterUiState())
+    private val _uiState =
+        MutableStateFlow(RegisterUiState())
 
     val uiState: StateFlow<RegisterUiState> =
         _uiState.asStateFlow()
@@ -25,7 +27,7 @@ class RegisterViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 workshopName = value,
-                errorMessage = null
+                error = null
             )
         }
     }
@@ -34,7 +36,7 @@ class RegisterViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 email = value,
-                errorMessage = null
+                error = null
             )
         }
     }
@@ -43,7 +45,7 @@ class RegisterViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 password = value,
-                errorMessage = null
+                error = null
             )
         }
     }
@@ -52,7 +54,7 @@ class RegisterViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 confirmPassword = value,
-                errorMessage = null
+                error = null
             )
         }
     }
@@ -60,7 +62,8 @@ class RegisterViewModel @Inject constructor(
     fun togglePasswordVisibility() {
         _uiState.update {
             it.copy(
-                isPasswordVisible = !it.isPasswordVisible
+                isPasswordVisible =
+                    !it.isPasswordVisible
             )
         }
     }
@@ -75,6 +78,10 @@ class RegisterViewModel @Inject constructor(
     }
 
     fun registerWorkshop() {
+
+        if (_uiState.value.isLoading) {
+            return
+        }
 
         val state = _uiState.value
 
@@ -91,108 +98,147 @@ class RegisterViewModel @Inject constructor(
             state.confirmPassword
 
         if (workshopName.isBlank()) {
-            showError("Workshop name is required.")
+            showError(
+                AuthUiError.WORKSHOP_NAME_REQUIRED
+            )
             return
         }
 
         if (email.isBlank()) {
-            showError("Email is required.")
+            showError(
+                AuthUiError.EMAIL_REQUIRED
+            )
             return
         }
 
         if (password.isBlank()) {
-            showError("Password is required.")
+            showError(
+                AuthUiError.PASSWORD_REQUIRED
+            )
             return
         }
 
         if (password.length < 6) {
             showError(
-                "Password must contain at least 6 characters."
+                AuthUiError.PASSWORD_TOO_SHORT
             )
             return
         }
 
         if (password != confirmPassword) {
-            showError("Passwords do not match.")
+            showError(
+                AuthUiError.PASSWORDS_DO_NOT_MATCH
+            )
             return
         }
 
         _uiState.update {
             it.copy(
                 isLoading = true,
-                errorMessage = null
+                error = null
             )
         }
 
         viewModelScope.launch {
 
-            val registrationResult =
-                authRepository.registerWorkshop(
+            authRepository
+                .registerWorkshop(
                     workshopName = workshopName,
                     email = email,
                     password = password
                 )
-
-            registrationResult
                 .onSuccess {
 
-                    // Same behavior as the Web application:
-                    // register workshop and immediately sign in.
-                    val loginResult =
-                        authRepository.signIn(
-                            email = email,
-                            password = password
-                        )
-
-                    loginResult
-                        .onSuccess {
-
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    isRegistrationSuccessful = true,
-                                    errorMessage = null
-                                )
-                            }
-                        }
-                        .onFailure { exception ->
-
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage =
-                                        exception.message
-                                            ?: "Workshop created, but automatic sign in failed."
-                                )
-                            }
-                        }
+                    signInAfterRegistration(
+                        email = email,
+                        password = password
+                    )
                 }
                 .onFailure { exception ->
 
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage =
-                                exception.message
-                                    ?: "Workshop registration failed."
+                            error =
+                                mapExceptionToUiError(
+                                    exception
+                                )
                         )
                     }
                 }
         }
     }
 
-    private fun showError(
-        message: String
+    private suspend fun signInAfterRegistration(
+        email: String,
+        password: String
     ) {
+
+        authRepository
+            .signIn(
+                email = email,
+                password = password
+            )
+            .onSuccess {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = null,
+                        isRegistrationSuccessful = true
+                    )
+                }
+            }
+            .onFailure { exception ->
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error =
+                            mapExceptionToUiError(
+                                exception
+                            )
+                    )
+                }
+            }
+    }
+
+    private fun mapExceptionToUiError(
+        exception: Throwable
+    ): AuthUiError {
+
+        return when (
+            exception.message
+        ) {
+
+            "Unable to connect to AutoService." ->
+                AuthUiError.CONNECTION_ERROR
+
+            "Workshop registration failed." ->
+                AuthUiError.REGISTRATION_FAILED
+
+            "Authentication failed." ->
+                AuthUiError.AUTHENTICATION_FAILED
+
+            else ->
+                AuthUiError.UNEXPECTED_ERROR
+        }
+    }
+
+    private fun showError(
+        error: AuthUiError
+    ) {
+
         _uiState.update {
             it.copy(
                 isLoading = false,
-                errorMessage = message
+                error = error
             )
         }
     }
 
     fun consumeRegistrationSuccess() {
+
         _uiState.update {
             it.copy(
                 isRegistrationSuccessful = false
