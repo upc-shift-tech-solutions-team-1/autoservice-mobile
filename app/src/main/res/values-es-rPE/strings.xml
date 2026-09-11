@@ -46,4 +46,30 @@
     <string name="error_unexpected_authentication">Ocurrió un error inesperado durante la autenticación.</string>
     <string name="admin_home_title">Panel de administración</string>
     <string name="mechanic_home_title">Espacio de trabajo del mecánico</string>
+
+    <!-- Authenticated navigation -->
+    <string name="nav_dashboard">Panel</string>
+    <string name="nav_vehicles">Vehículos</string>
+    <string name="nav_work_orders">Órdenes</string>
+    <string name="nav_inventory">Inventario</string>
+    <string name="nav_workspace">Trabajo</string>
+
+    <!-- Temporary authenticated content -->
+    <string name="placeholder_module">Sección actual: %1$s</string>
+    <string name="placeholder_module_description">Esta área será reemplazada por el módulo móvil correspondiente.</string>
+
+    <!-- Shared states -->
+    <string name="common_retry">Reintentar</string>
+    <string name="common_error_title">Ocurrió un problema</string>
+    <string name="common_error_description">No pudimos cargar la información solicitada.</string>
+    <string name="common_empty_title">Aún no hay información</string>
+    <string name="common_empty_description">Actualmente no hay información para mostrar.</string>
+
+    <!-- Sign out -->
+    <string name="common_cancel">Cancelar</string>
+    <string name="logout_dialog_title">¿Cerrar sesión?</string>
+    <string name="logout_dialog_message">¿Estás seguro de que deseas cerrar tu sesión en AutoService?</string>
+    <string name="logout_dialog_confirm">Cerrar sesión</string>
+    <!-- Accessibility -->
+    <string name="accessibility_loading">Cargando</string>
 </resources>

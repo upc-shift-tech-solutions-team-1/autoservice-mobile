@@ -1,5 +1,7 @@
 package com.torquelab.autoservice.auth.presentation.register
 
+import com.torquelab.autoservice.auth.presentation.AuthUiError
+
 data class RegisterUiState(
     val workshopName: String = "",
     val email: String = "",
@@ -8,6 +10,6 @@ data class RegisterUiState(
     val isPasswordVisible: Boolean = false,
     val isConfirmPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
+    val error: AuthUiError? = null,
     val isRegistrationSuccessful: Boolean = false
 )

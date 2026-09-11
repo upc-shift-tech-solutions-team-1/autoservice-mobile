@@ -48,4 +48,29 @@
     <string name="admin_home_title">Admin Dashboard</string>
     <string name="mechanic_home_title">Mechanic Workspace</string>
 
+    <!-- Authenticated navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_vehicles">Vehicles</string>
+    <string name="nav_work_orders">Work Orders</string>
+    <string name="nav_inventory">Inventory</string>
+    <string name="nav_workspace">Workspace</string>
+
+    <!-- Temporary authenticated content -->
+    <string name="placeholder_module">Current section: %1$s</string>
+    <string name="placeholder_module_description">This area will be replaced by the corresponding mobile feature.</string>
+
+    <!-- Shared states -->
+    <string name="common_retry">Retry</string>
+    <string name="common_error_title">Something went wrong</string>
+    <string name="common_error_description">We could not load the requested information.</string>
+    <string name="common_empty_title">Nothing here yet</string>
+    <string name="common_empty_description">There is currently no information to display.</string>
+    <!-- Sign out -->
+    <string name="common_cancel">Cancel</string>
+    <string name="logout_dialog_title">Sign out?</string>
+    <string name="logout_dialog_message">Are you sure you want to sign out of AutoService?</string>
+    <string name="logout_dialog_confirm">Sign out</string>
+
+    <!-- Accessibility -->
+    <string name="accessibility_loading">Loading</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.torquelab.autoservice.shared.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -8,14 +9,62 @@ import androidx.navigation.compose.composable
 import com.torquelab.autoservice.R
 import com.torquelab.autoservice.auth.presentation.login.LoginRoute
 import com.torquelab.autoservice.auth.presentation.register.RegisterRoute
+import com.torquelab.autoservice.shared.session.SessionEvent
+import com.torquelab.autoservice.shared.session.SessionEventManager
 import com.torquelab.autoservice.shared.session.SessionManager
+import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedSection
+import com.torquelab.autoservice.shared.ui.navigation.RoleNavigationItems
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    sessionManager: SessionManager
+    sessionManager: SessionManager,
+    sessionEventManager: SessionEventManager
 ) {
 
+    /*
+     * Global session events.
+     *
+     * If an authenticated API request receives a 401,
+     * AuthInterceptor emits SessionExpired.
+     *
+     * We clear the local session and redirect the user
+     * back to Login.
+     */
+    LaunchedEffect(sessionEventManager) {
+
+        sessionEventManager.events.collect { event ->
+
+            when (event) {
+
+                SessionEvent.SessionExpired -> {
+
+                    sessionManager.clearSession()
+
+                    navController.navigate(
+                        AppRoute.Login.route
+                    ) {
+
+                        popUpTo(
+                            navController.graph.id
+                        ) {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Used after Sign In or Register Workshop.
+     *
+     * AuthRepository already saved the session,
+     * so we resolve the destination according
+     * to the authenticated user's role.
+     */
     fun navigateToAuthenticatedDestination() {
 
         val session =
@@ -43,21 +92,22 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination =
-            AppRoute.Splash.route
+        startDestination = AppRoute.Splash.route
     ) {
 
+        /*
+         * SPLASH
+         *
+         * Restores the persisted session from DataStore.
+         */
         composable(
-            route =
-                AppRoute.Splash.route
+            route = AppRoute.Splash.route
         ) {
 
             SplashScreen(
-                sessionManager =
-                    sessionManager,
+                sessionManager = sessionManager,
 
-                onAuthenticated = {
-                        session ->
+                onAuthenticated = { session ->
 
                     val destination =
                         AuthDestinationResolver.resolve(
@@ -96,9 +146,11 @@ fun AppNavHost(
             )
         }
 
+        /*
+         * LOGIN
+         */
         composable(
-            route =
-                AppRoute.Login.route
+            route = AppRoute.Login.route
         ) {
 
             LoginRoute(
@@ -112,14 +164,18 @@ fun AppNavHost(
 
                     navController.navigate(
                         AppRoute.Register.route
-                    )
+                    ) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
 
+        /*
+         * REGISTER WORKSHOP
+         */
         composable(
-            route =
-                AppRoute.Register.route
+            route = AppRoute.Register.route
         ) {
 
             RegisterRoute(
@@ -136,16 +192,23 @@ fun AppNavHost(
             )
         }
 
+        /*
+         * ADMIN AUTHENTICATED AREA
+         */
         composable(
-            route =
-                AppRoute.AdminHome.route
+            route = AppRoute.AdminHome.route
         ) {
 
             HomePlaceholderRoute(
-                title =
-                    stringResource(
-                        R.string.admin_home_title
-                    ),
+                title = stringResource(
+                    R.string.admin_home_title
+                ),
+
+                navigationItems =
+                    RoleNavigationItems.admin,
+
+                initialDestinationKey =
+                    AuthenticatedSection.DASHBOARD,
 
                 onLoggedOut = {
 
@@ -165,16 +228,23 @@ fun AppNavHost(
             )
         }
 
+        /*
+         * MECHANIC AUTHENTICATED AREA
+         */
         composable(
-            route =
-                AppRoute.MechanicHome.route
+            route = AppRoute.MechanicHome.route
         ) {
 
             HomePlaceholderRoute(
-                title =
-                    stringResource(
-                        R.string.mechanic_home_title
-                    ),
+                title = stringResource(
+                    R.string.mechanic_home_title
+                ),
+
+                navigationItems =
+                    RoleNavigationItems.mechanic,
+
+                initialDestinationKey =
+                    AuthenticatedSection.WORKSPACE,
 
                 onLoggedOut = {
 
