@@ -8,20 +8,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.torquelab.autoservice.shared.session.SessionManager
+import com.torquelab.autoservice.shared.session.UserSession
 
 @Composable
 fun SplashScreen(
     sessionManager: SessionManager,
-    onAuthenticated: () -> Unit,
+    onAuthenticated: (UserSession) -> Unit,
     onUnauthenticated: () -> Unit
 ) {
+
     LaunchedEffect(Unit) {
 
-        val session = sessionManager.restoreSession()
+        val session =
+            sessionManager.restoreSession()
 
         if (session != null) {
-            onAuthenticated()
+
+            onAuthenticated(session)
+
         } else {
+
             onUnauthenticated()
         }
     }
@@ -30,6 +36,7 @@ fun SplashScreen(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+
         CircularProgressIndicator()
     }
 }

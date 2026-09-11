@@ -86,6 +86,10 @@ class SessionManager @Inject constructor(
         return currentToken != null
     }
 
+    fun currentSession(): UserSession? {
+        return _session.value
+    }
+
     companion object {
         private val USER_ID = intPreferencesKey("user_id")
         private val EMAIL = stringPreferencesKey("email")

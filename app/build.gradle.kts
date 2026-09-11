@@ -83,4 +83,7 @@ dependencies {
     // Debug
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Hilt + Compose
+    implementation(libs.androidx.hilt.navigation.compose)
 }
