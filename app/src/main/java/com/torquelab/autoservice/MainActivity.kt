@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.rememberNavController
 import com.torquelab.autoservice.shared.navigation.AppNavHost
+import com.torquelab.autoservice.shared.session.SessionEventManager
 import com.torquelab.autoservice.shared.session.SessionManager
 import com.torquelab.autoservice.ui.theme.AutoServiceTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -17,7 +18,12 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var sessionManager: SessionManager
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    @Inject
+    lateinit var sessionEventManager: SessionEventManager
+
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
@@ -26,11 +32,16 @@ class MainActivity : ComponentActivity() {
 
             AutoServiceTheme {
 
-                val navController = rememberNavController()
+                val navController =
+                    rememberNavController()
 
                 AppNavHost(
-                    navController = navController,
-                    sessionManager = sessionManager
+                    navController =
+                        navController,
+                    sessionManager =
+                        sessionManager,
+                    sessionEventManager =
+                        sessionEventManager
                 )
             }
         }

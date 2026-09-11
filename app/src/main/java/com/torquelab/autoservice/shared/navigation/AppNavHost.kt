@@ -1,6 +1,7 @@
 package com.torquelab.autoservice.shared.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -8,21 +9,61 @@ import androidx.navigation.compose.composable
 import com.torquelab.autoservice.R
 import com.torquelab.autoservice.auth.presentation.login.LoginRoute
 import com.torquelab.autoservice.auth.presentation.register.RegisterRoute
+import com.torquelab.autoservice.shared.session.SessionEvent
+import com.torquelab.autoservice.shared.session.SessionEventManager
 import com.torquelab.autoservice.shared.session.SessionManager
+import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedSection
 import com.torquelab.autoservice.shared.ui.navigation.RoleNavigationItems
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    sessionManager: SessionManager
+    sessionManager: SessionManager,
+    sessionEventManager: SessionEventManager
 ) {
 
     /*
-     * Used after login or workshop registration.
+     * Global session events.
      *
-     * The session was already saved by AuthRepository,
-     * so we only need to determine where the authenticated
-     * user should go according to their role.
+     * If an authenticated API request receives a 401,
+     * AuthInterceptor emits SessionExpired.
+     *
+     * We clear the local session and redirect the user
+     * back to Login.
+     */
+    LaunchedEffect(sessionEventManager) {
+
+        sessionEventManager.events.collect { event ->
+
+            when (event) {
+
+                SessionEvent.SessionExpired -> {
+
+                    sessionManager.clearSession()
+
+                    navController.navigate(
+                        AppRoute.Login.route
+                    ) {
+
+                        popUpTo(
+                            navController.graph.id
+                        ) {
+                            inclusive = true
+                        }
+
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Used after Sign In or Register Workshop.
+     *
+     * AuthRepository already saved the session,
+     * so we resolve the destination according
+     * to the authenticated user's role.
      */
     fun navigateToAuthenticatedDestination() {
 
@@ -55,16 +96,9 @@ fun AppNavHost(
     ) {
 
         /*
-         * Splash
+         * SPLASH
          *
-         * Restores the persisted session.
-         *
-         * If a valid local session exists:
-         *      Admin -> AdminHome
-         *      Mechanic -> MechanicHome
-         *
-         * Otherwise:
-         *      Login
+         * Restores the persisted session from DataStore.
          */
         composable(
             route = AppRoute.Splash.route
@@ -113,7 +147,7 @@ fun AppNavHost(
         }
 
         /*
-         * Login
+         * LOGIN
          */
         composable(
             route = AppRoute.Login.route
@@ -138,7 +172,7 @@ fun AppNavHost(
         }
 
         /*
-         * Workshop registration
+         * REGISTER WORKSHOP
          */
         composable(
             route = AppRoute.Register.route
@@ -159,7 +193,7 @@ fun AppNavHost(
         }
 
         /*
-         * Administrator authenticated area
+         * ADMIN AUTHENTICATED AREA
          */
         composable(
             route = AppRoute.AdminHome.route
@@ -174,7 +208,7 @@ fun AppNavHost(
                     RoleNavigationItems.admin,
 
                 initialDestinationKey =
-                    "dashboard",
+                    AuthenticatedSection.DASHBOARD,
 
                 onLoggedOut = {
 
@@ -195,7 +229,7 @@ fun AppNavHost(
         }
 
         /*
-         * Mechanic authenticated area
+         * MECHANIC AUTHENTICATED AREA
          */
         composable(
             route = AppRoute.MechanicHome.route
@@ -210,7 +244,7 @@ fun AppNavHost(
                     RoleNavigationItems.mechanic,
 
                 initialDestinationKey =
-                    "workspace",
+                    AuthenticatedSection.WORKSPACE,
 
                 onLoggedOut = {
 
