@@ -1,3 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- Application -->
     <string name="app_name">AutoService</string>
+
+    <!-- Common -->
+    <string name="common_show">Show</string>
+    <string name="common_hide">Hide</string>
+    <string name="common_loading">Loading...</string>
+
+    <!-- Login -->
+    <string name="login_title">AutoService</string>
+    <string name="login_welcome_back">Welcome back</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_sign_in">Sign in</string>
+    <string name="login_create_workshop">Don\'t have a workshop? Create one</string>
+
+    <!-- Register workshop -->
+    <string name="register_title">Create your workshop</string>
+    <string name="register_description">Create your AutoService workspace and administrator account.</string>
+    <string name="register_workshop_name">Workshop name</string>
+    <string name="register_email">Email</string>
+    <string name="register_password">Password</string>
+    <string name="register_confirm_password">Confirm password</string>
+    <string name="register_create_workshop">Create workshop</string>
+    <string name="register_already_account">Already have an account? Sign in</string>
+
+    <!-- Home temporary -->
+    <string name="home_title">Home</string>
+    <string name="home_sign_out">Sign out</string>
+
+    <!-- Validation -->
+    <string name="error_email_required">Email is required.</string>
+    <string name="error_password_required">Password is required.</string>
+    <string name="error_workshop_name_required">Workshop name is required.</string>
+    <string name="error_password_min_length">Password must contain at least 6 characters.</string>
+    <string name="error_passwords_not_match">Passwords do not match.</string>
+
+    <!-- Authentication -->
+    <string name="error_invalid_credentials">Incorrect email or password.</string>
+    <string name="error_authentication_failed">Authentication failed.</string>
+    <string name="error_registration_failed">Workshop registration failed.</string>
+    <string name="error_connection">Unable to connect to AutoService.</string>
+    <string name="error_unexpected_authentication">Unexpected authentication error.</string>
+
+    <string name="admin_home_title">Admin Dashboard</string>
+    <string name="mechanic_home_title">Mechanic Workspace</string>
+
 </resources>
