@@ -9,6 +9,7 @@ import com.torquelab.autoservice.R
 import com.torquelab.autoservice.auth.presentation.login.LoginRoute
 import com.torquelab.autoservice.auth.presentation.register.RegisterRoute
 import com.torquelab.autoservice.shared.session.SessionManager
+import com.torquelab.autoservice.shared.ui.navigation.RoleNavigationItems
 
 @Composable
 fun AppNavHost(
@@ -16,6 +17,13 @@ fun AppNavHost(
     sessionManager: SessionManager
 ) {
 
+    /*
+     * Used after login or workshop registration.
+     *
+     * The session was already saved by AuthRepository,
+     * so we only need to determine where the authenticated
+     * user should go according to their role.
+     */
     fun navigateToAuthenticatedDestination() {
 
         val session =
@@ -43,21 +51,29 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination =
-            AppRoute.Splash.route
+        startDestination = AppRoute.Splash.route
     ) {
 
+        /*
+         * Splash
+         *
+         * Restores the persisted session.
+         *
+         * If a valid local session exists:
+         *      Admin -> AdminHome
+         *      Mechanic -> MechanicHome
+         *
+         * Otherwise:
+         *      Login
+         */
         composable(
-            route =
-                AppRoute.Splash.route
+            route = AppRoute.Splash.route
         ) {
 
             SplashScreen(
-                sessionManager =
-                    sessionManager,
+                sessionManager = sessionManager,
 
-                onAuthenticated = {
-                        session ->
+                onAuthenticated = { session ->
 
                     val destination =
                         AuthDestinationResolver.resolve(
@@ -96,9 +112,11 @@ fun AppNavHost(
             )
         }
 
+        /*
+         * Login
+         */
         composable(
-            route =
-                AppRoute.Login.route
+            route = AppRoute.Login.route
         ) {
 
             LoginRoute(
@@ -112,14 +130,18 @@ fun AppNavHost(
 
                     navController.navigate(
                         AppRoute.Register.route
-                    )
+                    ) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
 
+        /*
+         * Workshop registration
+         */
         composable(
-            route =
-                AppRoute.Register.route
+            route = AppRoute.Register.route
         ) {
 
             RegisterRoute(
@@ -136,16 +158,23 @@ fun AppNavHost(
             )
         }
 
+        /*
+         * Administrator authenticated area
+         */
         composable(
-            route =
-                AppRoute.AdminHome.route
+            route = AppRoute.AdminHome.route
         ) {
 
             HomePlaceholderRoute(
-                title =
-                    stringResource(
-                        R.string.admin_home_title
-                    ),
+                title = stringResource(
+                    R.string.admin_home_title
+                ),
+
+                navigationItems =
+                    RoleNavigationItems.admin,
+
+                initialDestinationKey =
+                    "dashboard",
 
                 onLoggedOut = {
 
@@ -165,16 +194,23 @@ fun AppNavHost(
             )
         }
 
+        /*
+         * Mechanic authenticated area
+         */
         composable(
-            route =
-                AppRoute.MechanicHome.route
+            route = AppRoute.MechanicHome.route
         ) {
 
             HomePlaceholderRoute(
-                title =
-                    stringResource(
-                        R.string.mechanic_home_title
-                    ),
+                title = stringResource(
+                    R.string.mechanic_home_title
+                ),
+
+                navigationItems =
+                    RoleNavigationItems.mechanic,
+
+                initialDestinationKey =
+                    "workspace",
 
                 onLoggedOut = {
 
