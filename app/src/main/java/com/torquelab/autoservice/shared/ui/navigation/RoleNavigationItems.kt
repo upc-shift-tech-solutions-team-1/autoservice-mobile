@@ -6,6 +6,7 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Engineering
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.People
 import com.torquelab.autoservice.R
 
 object RoleNavigationItems {
@@ -30,6 +31,11 @@ object RoleNavigationItems {
             key = AuthenticatedSection.INVENTORY,
             labelRes = R.string.nav_inventory,
             icon = Icons.Outlined.Inventory2
+        ),
+        AuthenticatedNavigationItem(
+            key = AuthenticatedSection.STAFF,
+            labelRes = R.string.nav_staff,
+            icon = Icons.Outlined.People
         )
     )
 

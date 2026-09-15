@@ -11,4 +11,6 @@ object AuthenticatedSection {
     const val INVENTORY = "inventory"
 
     const val WORKSPACE = "workspace"
+
+    const val STAFF = "staff"
 }

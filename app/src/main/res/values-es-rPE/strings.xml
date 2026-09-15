@@ -53,6 +53,69 @@
     <string name="nav_work_orders">Órdenes</string>
     <string name="nav_inventory">Inventario</string>
     <string name="nav_workspace">Trabajo</string>
+    <string name="nav_staff">Personal</string>
+
+    <!-- Workshop -->
+    <string name="workshop_title">Operaciones del taller</string>
+    <string name="workshop_description">Gestiona órdenes activas y tareas verificables.</string>
+    <string name="workshop_add_task">Agregar tarea</string>
+    <string name="workshop_edit_task">Editar tarea</string>
+    <string name="workshop_order">Orden de trabajo</string>
+    <string name="workshop_select_order">Selecciona una orden</string>
+    <string name="workshop_task_description">Descripción de la tarea</string>
+    <string name="workshop_order_summary">Orden #%1$d · Vehículo #%2$d</string>
+    <string name="workshop_tracking_code">Código de seguimiento: %1$s</string>
+    <string name="workshop_priority">Prioridad</string>
+    <string name="workshop_estimated_minutes">Minutos estimados</string>
+    <string name="workshop_labor_price">Costo laboral</string>
+    <string name="workshop_mechanic">Mecánico</string>
+    <string name="workshop_task_details">Prioridad: %1$s · Labor: %2$.2f</string>
+    <string name="workshop_progress">Progreso: %1$d%% · %2$s</string>
+    <string name="workshop_task_summary">%1$s · %2$d min · %3$s</string>
+    <string name="workshop_unassigned">Sin asignar</string>
+    <string name="workshop_status_action">Estado</string>
+    <string name="workshop_assign_action">Asignar</string>
+    <string name="workshop_assign_title">Asignar tarea</string>
+    <string name="workshop_status_title">Actualizar estado</string>
+    <string name="workshop_cancel_task_title">¿Cancelar tarea?</string>
+    <string name="workshop_cancel_task_message">La tarea será eliminada de la orden de trabajo.</string>
+    <string name="workshop_cancel_task">Cancelar tarea</string>
+    <string name="workshop_empty_title">No hay órdenes</string>
+    <string name="workshop_empty_description">No hay órdenes ni tareas para este taller.</string>
+
+    <!-- Staff -->
+    <string name="staff_title">Coordinación del personal</string>
+    <string name="staff_description">Gestiona mecánicos, disponibilidad y carga de trabajo.</string>
+    <string name="staff_add_mechanic">Agregar mecánico</string>
+    <string name="staff_empty_title">No hay mecánicos</string>
+    <string name="staff_empty_description">No hay mecánicos registrados para este taller.</string>
+    <string name="staff_view_detail">Ver detalle</string>
+    <string name="staff_card_summary">%1$s · %2$d/%3$d tareas activas</string>
+    <string name="staff_mechanic_option">%1$s · %2$s · %3$d/%4$d tareas activas</string>
+    <string name="staff_name">Nombre</string>
+    <string name="staff_email">Correo electrónico</string>
+    <string name="staff_specialty">Especialidad</string>
+    <string name="staff_availability">Disponibilidad</string>
+    <string name="staff_availability_detail">Disponibilidad: %1$s</string>
+    <string name="staff_available">Disponible</string>
+    <string name="staff_at_capacity">En capacidad máxima</string>
+    <string name="staff_password">Contraseña inicial</string>
+    <string name="staff_capacity">Capacidad máxima</string>
+    <string name="staff_capacity_detail">Tareas activas: %1$d de %2$d</string>
+
+    <!-- Task statuses -->
+    <string name="status_pending">Pendiente</string>
+    <string name="status_in_progress">En progreso</string>
+    <string name="status_completed">Completada</string>
+    <string name="status_delivered">Entregada</string>
+    <string name="status_cancelled">Cancelada</string>
+    <string name="status_unknown">Desconocida</string>
+
+    <!-- Common actions -->
+    <string name="common_edit">Editar</string>
+    <string name="common_delete">Cancelar</string>
+    <string name="common_save">Guardar</string>
+    <string name="common_close">Cerrar</string>
 
     <!-- Temporary authenticated content -->
     <string name="placeholder_module">Sección actual: %1$s</string>

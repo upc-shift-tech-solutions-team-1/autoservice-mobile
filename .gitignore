@@ -4,6 +4,7 @@
 
 # Gradle
 .gradle/
+.kotlin/
 build/
 app/build/
 
@@ -24,6 +25,7 @@ captures/
 *.keystore
 .env
 secrets.properties
+ACCEPTANCE_WORKSHOP_STAFF.md
 
 # OS generated files
 .DS_Store

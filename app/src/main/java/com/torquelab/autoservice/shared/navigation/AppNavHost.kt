@@ -12,6 +12,7 @@ import com.torquelab.autoservice.auth.presentation.register.RegisterRoute
 import com.torquelab.autoservice.shared.session.SessionEvent
 import com.torquelab.autoservice.shared.session.SessionEventManager
 import com.torquelab.autoservice.shared.session.SessionManager
+import com.torquelab.autoservice.shared.session.UserRole
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedSection
 import com.torquelab.autoservice.shared.ui.navigation.RoleNavigationItems
 
@@ -210,6 +211,8 @@ fun AppNavHost(
                 initialDestinationKey =
                     AuthenticatedSection.DASHBOARD,
 
+                role = UserRole.ADMIN,
+
                 onLoggedOut = {
 
                     navController.navigate(
@@ -245,6 +248,8 @@ fun AppNavHost(
 
                 initialDestinationKey =
                     AuthenticatedSection.WORKSPACE,
+
+                role = UserRole.MECHANIC,
 
                 onLoggedOut = {
 
