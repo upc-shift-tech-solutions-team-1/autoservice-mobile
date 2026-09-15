@@ -4,6 +4,9 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.torquelab.autoservice.shared.network.ApiConstants
 import com.torquelab.autoservice.shared.network.AuthInterceptor
+import com.torquelab.autoservice.staff.data.remote.StaffApi
+import com.torquelab.autoservice.workshop.data.remote.TaskApi
+import com.torquelab.autoservice.workshop.data.remote.WorkshopApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -60,4 +63,19 @@ object NetworkModule {
             )
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideWorkshopApi(retrofit: Retrofit): WorkshopApi =
+        retrofit.create(WorkshopApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideTaskApi(retrofit: Retrofit): TaskApi =
+        retrofit.create(TaskApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideStaffApi(retrofit: Retrofit): StaffApi =
+        retrofit.create(StaffApi::class.java)
 }
