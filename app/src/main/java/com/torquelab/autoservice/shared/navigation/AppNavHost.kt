@@ -9,10 +9,12 @@ import androidx.navigation.compose.composable
 import com.torquelab.autoservice.R
 import com.torquelab.autoservice.auth.presentation.login.LoginRoute
 import com.torquelab.autoservice.auth.presentation.register.RegisterRoute
+import com.torquelab.autoservice.customer_trust.presentation.TrackingRoute
 import com.torquelab.autoservice.shared.session.SessionEvent
 import com.torquelab.autoservice.shared.session.SessionEventManager
 import com.torquelab.autoservice.shared.session.SessionManager
 import com.torquelab.autoservice.shared.session.UserRole
+import com.torquelab.autoservice.shared.ui.components.AutoServiceEmptyState
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedSection
 import com.torquelab.autoservice.shared.ui.navigation.RoleNavigationItems
 
@@ -168,7 +170,26 @@ fun AppNavHost(
                     ) {
                         launchSingleTop = true
                     }
+                },
+
+                onTrackingClick = {
+                    navController.navigate(
+                        AppRoute.Tracking.route
+                    ) {
+                        launchSingleTop = true
+                    }
                 }
+            )
+        }
+
+        /*
+         * TRACKING (Public)
+         */
+        composable(
+            route = AppRoute.Tracking.route
+        ) {
+            TrackingRoute(
+                onBack = { navController.popBackStack() }
             )
         }
 

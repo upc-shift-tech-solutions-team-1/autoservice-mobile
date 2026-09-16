@@ -125,6 +125,7 @@ fun HomePlaceholderScreen(
         ) {
             AuthenticatedModuleContent(
                 destinationKey = selectedDestinationKey,
+                onNavigateToSection = onDestinationSelected,
                 role = role
             )
         }
