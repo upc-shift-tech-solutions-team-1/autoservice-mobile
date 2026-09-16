@@ -36,6 +36,7 @@ import com.torquelab.autoservice.ui.theme.AutoServiceTheme
 fun LoginRoute(
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
+    onDemoClick: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -54,7 +55,8 @@ fun LoginRoute(
         onTogglePasswordVisibility =
             viewModel::togglePasswordVisibility,
         onSignIn = viewModel::signIn,
-        onRegisterClick = onRegisterClick
+        onRegisterClick = onRegisterClick,
+        onDemoClick = onDemoClick
     )
 }
 
@@ -65,7 +67,8 @@ fun LoginScreen(
     onPasswordChange: (String) -> Unit,
     onTogglePasswordVisibility: () -> Unit,
     onSignIn: () -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    onDemoClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
@@ -163,6 +166,12 @@ fun LoginScreen(
         Spacer(
             modifier = Modifier.height(16.dp)
         )
+
+        if (com.torquelab.autoservice.BuildConfig.DEBUG && onDemoClick != null) {
+            TextButton(onClick = onDemoClick, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.m_demo_open))
+            }
+        }
 
         TextButton(
             onClick = onRegisterClick,

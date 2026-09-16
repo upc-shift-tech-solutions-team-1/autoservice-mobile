@@ -154,6 +154,9 @@ fun AppNavHost(
         ) {
 
             LoginRoute(
+                onDemoClick = if (com.torquelab.autoservice.BuildConfig.DEBUG) {
+                    { navController.navigate("fleet-inventory-demo") }
+                } else null,
 
                 onLoginSuccess = {
 
@@ -169,6 +172,12 @@ fun AppNavHost(
                     }
                 }
             )
+        }
+
+        if (com.torquelab.autoservice.BuildConfig.DEBUG) {
+            composable("fleet-inventory-demo") {
+                com.torquelab.autoservice.shared.demo.DemoScreen(onExit = { navController.popBackStack() })
+            }
         }
 
         /*
