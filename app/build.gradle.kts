@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
@@ -22,7 +22,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val apiBaseUrl = providers.gradleProperty("autoserviceApiUrl")
-            .orElse("https://autoservice-aw-backend.onrender.com/api/v1/")
+            .orElse("https://autoservice-backend-cnbd.onrender.com/api/v1/")
             .get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
@@ -95,3 +95,4 @@ dependencies {
 
     implementation("androidx.compose.material:material-icons-extended")
 }
+

@@ -14,7 +14,6 @@ import com.torquelab.autoservice.shared.session.SessionEvent
 import com.torquelab.autoservice.shared.session.SessionEventManager
 import com.torquelab.autoservice.shared.session.SessionManager
 import com.torquelab.autoservice.shared.session.UserRole
-import com.torquelab.autoservice.shared.ui.components.AutoServiceEmptyState
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedSection
 import com.torquelab.autoservice.shared.ui.navigation.RoleNavigationItems
 
@@ -157,7 +156,6 @@ fun AppNavHost(
         ) {
 
             LoginRoute(
-
                 onLoginSuccess = {
 
                     navigateToAuthenticatedDestination()
@@ -173,6 +171,7 @@ fun AppNavHost(
                 },
 
                 onTrackingClick = {
+
                     navController.navigate(
                         AppRoute.Tracking.route
                     ) {
@@ -188,8 +187,11 @@ fun AppNavHost(
         composable(
             route = AppRoute.Tracking.route
         ) {
+
             TrackingRoute(
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -201,7 +203,6 @@ fun AppNavHost(
         ) {
 
             RegisterRoute(
-
                 onRegistrationSuccess = {
 
                     navigateToAuthenticatedDestination()

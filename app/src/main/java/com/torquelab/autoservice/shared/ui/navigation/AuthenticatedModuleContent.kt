@@ -52,15 +52,11 @@ fun AuthenticatedModuleContent(
         }
 
         AuthenticatedSection.VEHICLES -> {
-            ModulePlaceholder(
-                titleRes = R.string.nav_vehicles
-            )
+            com.torquelab.autoservice.shared.management.ManagementRoute(isFleet = true)
         }
 
         AuthenticatedSection.INVENTORY -> {
-            ModulePlaceholder(
-                titleRes = R.string.nav_inventory
-            )
+            com.torquelab.autoservice.shared.management.ManagementRoute(isFleet = false)
         }
 
         else -> {
