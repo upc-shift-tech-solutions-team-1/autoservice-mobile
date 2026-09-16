@@ -19,9 +19,7 @@ fun AuthenticatedModuleContent(
         }
 
         AuthenticatedSection.VEHICLES -> {
-            ModulePlaceholder(
-                titleRes = R.string.nav_vehicles
-            )
+            com.torquelab.autoservice.shared.management.ManagementRoute(isFleet = true)
         }
 
         AuthenticatedSection.WORK_ORDERS -> {
@@ -31,9 +29,7 @@ fun AuthenticatedModuleContent(
         }
 
         AuthenticatedSection.INVENTORY -> {
-            ModulePlaceholder(
-                titleRes = R.string.nav_inventory
-            )
+            com.torquelab.autoservice.shared.management.ManagementRoute(isFleet = false)
         }
 
         AuthenticatedSection.WORKSPACE -> {
