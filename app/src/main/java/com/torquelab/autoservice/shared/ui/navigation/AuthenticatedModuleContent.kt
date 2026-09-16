@@ -11,6 +11,8 @@ import com.torquelab.autoservice.staff.presentation.StaffRoute
 import com.torquelab.autoservice.workshop.presentation.DashboardRoute
 import com.torquelab.autoservice.workshop.presentation.WorkshopRoute
 
+import com.torquelab.autoservice.mechanic.presentation.MechanicSection
+
 @Composable
 fun AuthenticatedModuleContent(
     destinationKey: String,
@@ -18,6 +20,14 @@ fun AuthenticatedModuleContent(
     role: String = UserRole.ADMIN
 ) {
     when (destinationKey) {
+
+        AuthenticatedSection.WORKSPACE -> {
+            if (role.lowercase() == UserRole.MECHANIC) {
+                MechanicSection()
+            } else {
+                ModulePlaceholder(R.string.nav_workspace)
+            }
+        }
 
         AuthenticatedSection.WORK_ORDERS -> {
             if (role.lowercase() == UserRole.ADMIN) {
