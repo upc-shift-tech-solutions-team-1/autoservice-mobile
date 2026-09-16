@@ -54,6 +54,7 @@
     <string name="nav_inventory">Inventario</string>
     <string name="nav_workspace">Trabajo</string>
     <string name="nav_staff">Personal</string>
+    <string name="nav_customers">Clientes</string>
 
     <!-- Workshop -->
     <string name="workshop_title">Operaciones del taller</string>
@@ -102,6 +103,39 @@
     <string name="staff_password">Contraseña inicial</string>
     <string name="staff_capacity">Capacidad máxima</string>
     <string name="staff_capacity_detail">Tareas activas: %1$d de %2$d</string>
+
+    <!-- Clientes -->
+    <string name="customers_title">Gestión de Clientes</string>
+    <string name="customers_description">Gestiona tus clientes y sus vehículos.</string>
+    <string name="customers_add_customer">Agregar cliente</string>
+    <string name="customers_name">Nombre completo</string>
+    <string name="customers_dni">DNI / ID</string>
+    <string name="customers_email">Correo electrónico</string>
+    <string name="customers_phone">Teléfono</string>
+    <string name="customers_search_hint">Buscar por nombre o DNI...</string>
+    <string name="customers_empty_title">No se encontraron clientes</string>
+    <string name="customers_empty_description">Intenta una búsqueda diferente o agrega un nuevo cliente.</string>
+
+    <!-- Tracking -->
+    <string name="tracking_title">Seguimiento de Orden</string>
+    <string name="tracking_description">Consulta el estado de tu orden de reparación.</string>
+    <string name="tracking_code_hint">Ingresa código de seguimiento (ej. AS-1002B)</string>
+    <string name="tracking_check_status">Consultar Estado</string>
+    <string name="tracking_order_not_found">Orden no encontrada.</string>
+    <string name="tracking_estimated_delivery">Entrega estimada: %1$s</string>
+    <string name="tracking_total_cost">Costo total: %1$.2f</string>
+    <string name="tracking_payment_action">Pagar Saldo</string>
+    <string name="tracking_stage_diagnostic">Diagnóstico</string>
+    <string name="tracking_stage_in_progress">En Proceso</string>
+    <string name="tracking_stage_quality_control">Control de Calidad</string>
+    <string name="tracking_stage_ready">Listo</string>
+    <string name="tracking_enter_code">Ingresa un código de seguimiento para ver el progreso de tu vehículo.</string>
+    <string name="tracking_public_access">Consultar Estado de Orden</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_quick_access_customers">Gestionar Clientes</string>
+    <string name="dashboard_welcome">Bienvenido, Administrador</string>
+    <string name="dashboard_summary">Resumen del Taller</string>
 
     <!-- Task statuses -->
     <string name="status_pending">Pendiente</string>
