@@ -13,6 +13,7 @@ local.properties
 # Android generated files
 captures/
 .externalNativeBuild/
+temp_auto_push.bat
 .cxx/
 
 # Build artifacts
@@ -27,4 +28,5 @@ secrets.properties
 
 # OS generated files
 .DS_Store
-Thumbs.db
+Thumbs.db.gitignore
+branch_structure.json
