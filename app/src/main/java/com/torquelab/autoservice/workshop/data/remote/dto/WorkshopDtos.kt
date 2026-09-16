@@ -19,6 +19,17 @@ data class WorkOrderDto(
     val finalTestDone: Boolean
 )
 
+data class TaskPartDto(
+    val id: Int,
+    val inventoryItemId: Int,
+    val name: String,
+    val quantity: Int,
+    val unitPrice: Double,
+    val purchasePrice: Double,
+    val brand: String?,
+    val qualityTier: String?
+)
+
 data class TaskDto(
     val id: Int,
     val workOrderId: Int,
@@ -28,11 +39,18 @@ data class TaskDto(
     val priority: String,
     val estimatedTime: Int,
     val laborPrice: Double,
+    val materialsCost: Double? = null,
     val technicalDiagnosis: String? = null,
     val customerExplanation: String? = null,
     val internalObservation: String? = null,
     val evidenceRegistered: String? = null,
-    val adminReviewStatus: String? = null
+    val adminReviewStatus: String? = null,
+    val parts: List<TaskPartDto>? = null
+)
+
+data class CreateTaskPartRequest(
+    val inventoryItemId: Int,
+    val quantity: Int
 )
 
 data class CreateTaskRequest(
@@ -41,7 +59,10 @@ data class CreateTaskRequest(
     val description: String,
     val priority: String,
     val estimatedTime: Int,
-    val laborPrice: Double
+    val laborPrice: Double,
+    val parts: List<CreateTaskPartRequest>? = null,
+    val technicalDiagnosis: String? = null,
+    val adminReviewStatus: String? = null
 )
 
 data class UpdateTaskRequest(
