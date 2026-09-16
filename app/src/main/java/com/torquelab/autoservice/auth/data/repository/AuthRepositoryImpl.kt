@@ -68,6 +68,7 @@ class AuthRepositoryImpl @Inject constructor(
                 )
             )
         }
+
     }
 
     override suspend fun registerWorkshop(

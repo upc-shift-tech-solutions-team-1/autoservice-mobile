@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.torquelab.autoservice.R
 import com.torquelab.autoservice.shared.session.SessionViewModel
+import com.torquelab.autoservice.shared.session.UserRole
 import com.torquelab.autoservice.shared.ui.components.AuthenticatedScaffold
 import com.torquelab.autoservice.shared.ui.components.AutoServiceConfirmationDialog
 import com.torquelab.autoservice.shared.ui.navigation.AuthenticatedModuleContent
@@ -30,6 +31,7 @@ fun HomePlaceholderRoute(
     navigationItems: List<AuthenticatedNavigationItem>,
     initialDestinationKey: String,
     onLoggedOut: () -> Unit,
+    role: String = UserRole.ADMIN,
     viewModel: SessionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -53,6 +55,7 @@ fun HomePlaceholderRoute(
         title = title,
         navigationItems = navigationItems,
         selectedDestinationKey = selectedDestinationKey,
+        role = role,
 
         onDestinationSelected = { destinationKey ->
             selectedDestinationKey = destinationKey
@@ -103,7 +106,8 @@ fun HomePlaceholderScreen(
     selectedDestinationKey: String,
     onDestinationSelected: (String) -> Unit,
     isLoggingOut: Boolean,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    role: String = UserRole.ADMIN
 ) {
     AuthenticatedScaffold(
         title = title,
@@ -120,8 +124,9 @@ fun HomePlaceholderScreen(
                 .padding(innerPadding)
         ) {
             AuthenticatedModuleContent(
-                destinationKey =
-                    selectedDestinationKey
+                destinationKey = selectedDestinationKey,
+                onNavigateToSection = onDestinationSelected,
+                role = role
             )
         }
     }

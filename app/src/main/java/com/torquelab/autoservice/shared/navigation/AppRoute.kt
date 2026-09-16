@@ -13,4 +13,8 @@ sealed class AppRoute(
     data object AdminHome : AppRoute("admin_home")
 
     data object MechanicHome : AppRoute("mechanic_home")
+
+    data object Tracking : AppRoute("tracking")
+
+    data object Customers : AppRoute("customers")
 }

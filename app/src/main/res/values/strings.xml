@@ -54,6 +54,103 @@
     <string name="nav_work_orders">Work Orders</string>
     <string name="nav_inventory">Inventory</string>
     <string name="nav_workspace">Workspace</string>
+    <string name="nav_staff">Staff</string>
+    <string name="nav_customers">Customers</string>
+
+    <!-- Workshop -->
+    <string name="workshop_title">Workshop operations</string>
+    <string name="workshop_description">Manage active work orders and verifiable tasks.</string>
+    <string name="workshop_add_task">Add task</string>
+    <string name="workshop_edit_task">Edit task</string>
+    <string name="workshop_order">Work order</string>
+    <string name="workshop_select_order">Select an order</string>
+    <string name="workshop_task_description">Task description</string>
+    <string name="workshop_order_summary">Order #%1$d · Vehicle #%2$d</string>
+    <string name="workshop_tracking_code">Tracking code: %1$s</string>
+    <string name="workshop_priority">Priority</string>
+    <string name="workshop_estimated_minutes">Estimated minutes</string>
+    <string name="workshop_labor_price">Labor price</string>
+    <string name="workshop_mechanic">Mechanic</string>
+    <string name="workshop_task_details">Priority: %1$s · Labor: %2$.2f</string>
+    <string name="workshop_progress">Progress: %1$d%% · %2$s</string>
+    <string name="workshop_task_summary">%1$s · %2$d min · %3$s</string>
+    <string name="workshop_unassigned">Unassigned</string>
+    <string name="workshop_status_action">Status</string>
+    <string name="workshop_assign_action">Assign</string>
+    <string name="workshop_assign_title">Assign task</string>
+    <string name="workshop_status_title">Update task status</string>
+    <string name="workshop_cancel_task_title">Cancel task?</string>
+    <string name="workshop_cancel_task_message">The task will be removed from the work order.</string>
+    <string name="workshop_cancel_task">Cancel task</string>
+    <string name="workshop_empty_title">No work orders</string>
+    <string name="workshop_empty_description">There are no work orders or tasks for this workshop.</string>
+
+    <!-- Staff -->
+    <string name="staff_title">Staff coordination</string>
+    <string name="staff_description">Manage mechanics, availability and workload.</string>
+    <string name="staff_add_mechanic">Add mechanic</string>
+    <string name="staff_empty_title">No mechanics</string>
+    <string name="staff_empty_description">There are no mechanics registered for this workshop.</string>
+    <string name="staff_view_detail">View detail</string>
+    <string name="staff_card_summary">%1$s · %2$d/%3$d active tasks</string>
+    <string name="staff_mechanic_option">%1$s · %2$s · %3$d/%4$d active tasks</string>
+    <string name="staff_name">Name</string>
+    <string name="staff_email">Email</string>
+    <string name="staff_specialty">Specialty</string>
+    <string name="staff_availability">Availability</string>
+    <string name="staff_availability_detail">Availability: %1$s</string>
+    <string name="staff_available">Available</string>
+    <string name="staff_at_capacity">At capacity</string>
+    <string name="staff_password">Initial password</string>
+    <string name="staff_capacity">Maximum capacity</string>
+    <string name="staff_capacity_detail">Active tasks: %1$d of %2$d</string>
+
+    <!-- Customers -->
+    <string name="customers_title">Customer Management</string>
+    <string name="customers_description">Manage your customers and their vehicles.</string>
+    <string name="customers_add_customer">Add customer</string>
+    <string name="customers_name">Full Name</string>
+    <string name="customers_dni">DNI / ID</string>
+    <string name="customers_email">Email</string>
+    <string name="customers_phone">Phone</string>
+    <string name="customers_search_hint">Search by name or DNI...</string>
+    <string name="customers_empty_title">No customers found</string>
+    <string name="customers_empty_description">Try a different search or add a new customer.</string>
+
+    <!-- Tracking -->
+    <string name="tracking_title">Order Tracking</string>
+    <string name="tracking_description">Check the status of your repair order.</string>
+    <string name="tracking_code_hint">Enter tracking code (e.g. AS-1002B)</string>
+    <string name="tracking_check_status">Check Status</string>
+    <string name="tracking_order_not_found">Order not found.</string>
+    <string name="tracking_estimated_delivery">Estimated delivery: %1$s</string>
+    <string name="tracking_total_cost">Total cost: %1$.2f</string>
+    <string name="tracking_payment_action">Pay Balance</string>
+    <string name="tracking_stage_diagnostic">Diagnostic</string>
+    <string name="tracking_stage_in_progress">In Progress</string>
+    <string name="tracking_stage_quality_control">Quality Control</string>
+    <string name="tracking_stage_ready">Ready</string>
+    <string name="tracking_enter_code">Enter a tracking code to see the progress of your vehicle.</string>
+    <string name="tracking_public_access">Consult Order Status</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_quick_access_customers">Manage Customers</string>
+    <string name="dashboard_welcome">Welcome, Administrator</string>
+    <string name="dashboard_summary">Workshop Overview</string>
+
+    <!-- Task statuses -->
+    <string name="status_pending">Pending</string>
+    <string name="status_in_progress">In progress</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_delivered">Delivered</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_unknown">Unknown</string>
+
+    <!-- Common actions -->
+    <string name="common_edit">Edit</string>
+    <string name="common_delete">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="common_close">Close</string>
 
     <!-- Temporary authenticated content -->
     <string name="placeholder_module">Current section: %1$s</string>

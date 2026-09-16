@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
@@ -20,6 +20,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val apiBaseUrl = providers.gradleProperty("autoserviceApiUrl")
+            .orElse("https://autoservice-backend-cnbd.onrender.com/api/v1/")
+            .get()
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {
@@ -37,6 +42,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -89,3 +95,4 @@ dependencies {
 
     implementation("androidx.compose.material:material-icons-extended")
 }
+
