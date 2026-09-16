@@ -82,4 +82,14 @@ object NetworkModule {
     @Singleton
     fun provideStaffApi(retrofit: Retrofit): StaffApi =
         retrofit.create(StaffApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFleetApi(retrofit: Retrofit): com.torquelab.autoservice.fleet.data.FleetApi =
+        retrofit.create(com.torquelab.autoservice.fleet.data.FleetApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideInventoryApi(retrofit: Retrofit): com.torquelab.autoservice.inventory.data.InventoryApi =
+        retrofit.create(com.torquelab.autoservice.inventory.data.InventoryApi::class.java)
 }
