@@ -36,6 +36,7 @@ import com.torquelab.autoservice.ui.theme.AutoServiceTheme
 fun LoginRoute(
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
+    onTrackingClick: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -54,7 +55,8 @@ fun LoginRoute(
         onTogglePasswordVisibility =
             viewModel::togglePasswordVisibility,
         onSignIn = viewModel::signIn,
-        onRegisterClick = onRegisterClick
+        onRegisterClick = onRegisterClick,
+        onTrackingClick = onTrackingClick
     )
 }
 
@@ -65,7 +67,8 @@ fun LoginScreen(
     onPasswordChange: (String) -> Unit,
     onTogglePasswordVisibility: () -> Unit,
     onSignIn: () -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    onTrackingClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -176,6 +179,22 @@ fun LoginScreen(
             )
         }
 
+        Spacer(
+            modifier = Modifier.height(8.dp)
+        )
+
+        TextButton(
+            onClick = onTrackingClick,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
+        ) {
+            Text(
+                text = stringResource(
+                    R.string.tracking_public_access
+                )
+            )
+        }
+
     }
 }
 
@@ -197,7 +216,8 @@ private fun LoginScreenPreview() {
             onPasswordChange = {},
             onTogglePasswordVisibility = {},
             onSignIn = {},
-            onRegisterClick = {}
+            onRegisterClick = {},
+            onTrackingClick = {}
         )
     }
 }
