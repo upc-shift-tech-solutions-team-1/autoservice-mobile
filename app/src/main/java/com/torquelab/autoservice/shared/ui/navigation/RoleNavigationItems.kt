@@ -44,11 +44,6 @@ object RoleNavigationItems {
             key = AuthenticatedSection.WORKSPACE,
             labelRes = R.string.nav_workspace,
             icon = Icons.Outlined.Engineering
-        ),
-        AuthenticatedNavigationItem(
-            key = AuthenticatedSection.WORK_ORDERS,
-            labelRes = R.string.nav_work_orders,
-            icon = Icons.Outlined.Assignment
         )
     )
 }
