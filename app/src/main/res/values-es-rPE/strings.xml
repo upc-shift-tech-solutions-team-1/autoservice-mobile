@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Application -->
+    <string name="app_name">AutoService</string>
+
+    <!-- Common -->
+    <string name="common_show">Mostrar</string>
+    <string name="common_hide">Ocultar</string>
+    <string name="common_loading">Cargando...</string>
+
+    <!-- Login -->
+    <string name="login_title">AutoService</string>
+    <string name="login_welcome_back">Bienvenido de nuevo</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_sign_in">Iniciar sesión</string>
+    <string name="login_create_workshop">¿No tienes un taller? Crea uno</string>
+
+    <!-- Register workshop -->
+    <string name="register_title">Crea tu taller</string>
+    <string name="register_description">Crea tu espacio de trabajo en AutoService y tu cuenta de administrador.</string>
+    <string name="register_workshop_name">Nombre del taller</string>
+    <string name="register_email">Correo electrónico</string>
+    <string name="register_password">Contraseña</string>
+    <string name="register_confirm_password">Confirmar contraseña</string>
+    <string name="register_create_workshop">Crear taller</string>
+    <string name="register_already_account">¿Ya tienes una cuenta? Inicia sesión</string>
+
+    <!-- Home temporary -->
+    <string name="home_title">Inicio</string>
+    <string name="home_sign_out">Cerrar sesión</string>
+
+    <!-- Validation -->
+    <string name="error_email_required">El correo electrónico es obligatorio.</string>
+    <string name="error_password_required">La contraseña es obligatoria.</string>
+    <string name="error_workshop_name_required">El nombre del taller es obligatorio.</string>
+    <string name="error_password_min_length">La contraseña debe contener al menos 6 caracteres.</string>
+    <string name="error_passwords_not_match">Las contraseñas no coinciden.</string>
+
+    <!-- Authentication -->
+    <string name="error_invalid_credentials">Correo electrónico o contraseña incorrectos.</string>
+    <string name="error_authentication_failed">No se pudo iniciar sesión.</string>
+    <string name="error_registration_failed">No se pudo registrar el taller.</string>
+    <string name="error_connection">No se pudo conectar con AutoService.</string>
+    <string name="error_unexpected_authentication">Ocurrió un error inesperado durante la autenticación.</string>
+    <string name="admin_home_title">Panel de administración</string>
+    <string name="mechanic_home_title">Espacio de trabajo del mecánico</string>
+
+    <!-- Authenticated navigation -->
+    <string name="nav_dashboard">Panel</string>
+    <string name="nav_vehicles">Vehículos</string>
+    <string name="nav_work_orders">Órdenes</string>
+    <string name="nav_inventory">Inventario</string>
+    <string name="nav_workspace">Trabajo</string>
+    <string name="nav_staff">Personal</string>
+    <string name="nav_customers">Clientes</string>
+
+    <!-- Workshop -->
+    <string name="workshop_title">Operaciones del taller</string>
+    <string name="workshop_description">Gestiona órdenes activas y tareas verificables.</string>
+    <string name="workshop_add_task">Agregar tarea</string>
+    <string name="workshop_edit_task">Editar tarea</string>
+    <string name="workshop_order">Orden de trabajo</string>
+    <string name="workshop_select_order">Selecciona una orden</string>
+    <string name="workshop_task_description">Descripción de la tarea</string>
+    <string name="workshop_order_summary">Orden #%1$d · Vehículo #%2$d</string>
+    <string name="workshop_tracking_code">Código de seguimiento: %1$s</string>
+    <string name="workshop_priority">Prioridad</string>
+    <string name="workshop_estimated_minutes">Minutos estimados</string>
+    <string name="workshop_labor_price">Costo laboral</string>
+    <string name="workshop_mechanic">Mecánico</string>
+    <string name="workshop_task_details">Prioridad: %1$s · Labor: %2$.2f</string>
+    <string name="workshop_progress">Progreso: %1$d%% · %2$s</string>
+    <string name="workshop_task_summary">%1$s · %2$d min · %3$s</string>
+    <string name="workshop_unassigned">Sin asignar</string>
+    <string name="workshop_status_action">Estado</string>
+    <string name="workshop_assign_action">Asignar</string>
+    <string name="workshop_assign_title">Asignar tarea</string>
+    <string name="workshop_status_title">Actualizar estado</string>
+    <string name="workshop_cancel_task_title">¿Cancelar tarea?</string>
+    <string name="workshop_cancel_task_message">La tarea será eliminada de la orden de trabajo.</string>
+    <string name="workshop_cancel_task">Cancelar tarea</string>
+    <string name="workshop_empty_title">No hay órdenes</string>
+    <string name="workshop_empty_description">No hay órdenes ni tareas para este taller.</string>
+
+    <!-- Staff -->
+    <string name="staff_title">Coordinación del personal</string>
+    <string name="staff_description">Gestiona mecánicos, disponibilidad y carga de trabajo.</string>
+    <string name="staff_add_mechanic">Agregar mecánico</string>
+    <string name="staff_empty_title">No hay mecánicos</string>
+    <string name="staff_empty_description">No hay mecánicos registrados para este taller.</string>
+    <string name="staff_view_detail">Ver detalle</string>
+    <string name="staff_card_summary">%1$s · %2$d/%3$d tareas activas</string>
+    <string name="staff_mechanic_option">%1$s · %2$s · %3$d/%4$d tareas activas</string>
+    <string name="staff_name">Nombre</string>
+    <string name="staff_email">Correo electrónico</string>
+    <string name="staff_specialty">Especialidad</string>
+    <string name="staff_availability">Disponibilidad</string>
+    <string name="staff_availability_detail">Disponibilidad: %1$s</string>
+    <string name="staff_available">Disponible</string>
+    <string name="staff_at_capacity">En capacidad máxima</string>
+    <string name="staff_password">Contraseña inicial</string>
+    <string name="staff_capacity">Capacidad máxima</string>
+    <string name="staff_capacity_detail">Tareas activas: %1$d de %2$d</string>
+
+    <!-- Clientes -->
+    <string name="customers_title">Gestión de Clientes</string>
+    <string name="customers_description">Gestiona tus clientes y sus vehículos.</string>
+    <string name="customers_add_customer">Agregar cliente</string>
+    <string name="customers_name">Nombre completo</string>
+    <string name="customers_dni">DNI / ID</string>
+    <string name="customers_email">Correo electrónico</string>
+    <string name="customers_phone">Teléfono</string>
+    <string name="customers_search_hint">Buscar por nombre o DNI...</string>
+    <string name="customers_empty_title">No se encontraron clientes</string>
+    <string name="customers_empty_description">Intenta una búsqueda diferente o agrega un nuevo cliente.</string>
+
+    <!-- Tracking -->
+    <string name="tracking_title">Seguimiento de Orden</string>
+    <string name="tracking_description">Consulta el estado de tu orden de reparación.</string>
+    <string name="tracking_code_hint">Ingresa código de seguimiento (ej. AS-1002B)</string>
+    <string name="tracking_check_status">Consultar Estado</string>
+    <string name="tracking_order_not_found">Orden no encontrada.</string>
+    <string name="tracking_estimated_delivery">Entrega estimada: %1$s</string>
+    <string name="tracking_total_cost">Costo total: %1$.2f</string>
+    <string name="tracking_payment_action">Pagar Saldo</string>
+    <string name="tracking_stage_diagnostic">Diagnóstico</string>
+    <string name="tracking_stage_in_progress">En Proceso</string>
+    <string name="tracking_stage_quality_control">Control de Calidad</string>
+    <string name="tracking_stage_ready">Listo</string>
+    <string name="tracking_enter_code">Ingresa un código de seguimiento para ver el progreso de tu vehículo.</string>
+    <string name="tracking_public_access">Consultar Estado de Orden</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_quick_access_customers">Gestionar Clientes</string>
+    <string name="dashboard_welcome">Bienvenido, Administrador</string>
+    <string name="dashboard_summary">Resumen del Taller</string>
+
+    <!-- Task statuses -->
+    <string name="status_pending">Pendiente</string>
+    <string name="status_in_progress">En progreso</string>
+    <string name="status_completed">Completada</string>
+    <string name="status_delivered">Entregada</string>
+    <string name="status_cancelled">Cancelada</string>
+    <string name="status_unknown">Desconocida</string>
+
+    <!-- Common actions -->
+    <string name="common_edit">Editar</string>
+    <string name="common_delete">Cancelar</string>
+    <string name="common_save">Guardar</string>
+    <string name="common_close">Cerrar</string>
+
+    <!-- Temporary authenticated content -->
+    <string name="placeholder_module">Sección actual: %1$s</string>
+    <string name="placeholder_module_description">Esta área será reemplazada por el módulo móvil correspondiente.</string>
+
+    <!-- Shared states -->
+    <string name="common_retry">Reintentar</string>
+    <string name="common_error_title">Ocurrió un problema</string>
+    <string name="common_error_description">No pudimos cargar la información solicitada.</string>
+    <string name="common_empty_title">Aún no hay información</string>
+    <string name="common_empty_description">Actualmente no hay información para mostrar.</string>
+
+    <!-- Sign out -->
+    <string name="common_cancel">Cancelar</string>
+    <string name="logout_dialog_title">¿Cerrar sesión?</string>
+    <string name="logout_dialog_message">¿Estás seguro de que deseas cerrar tu sesión en AutoService?</string>
+    <string name="logout_dialog_confirm">Cerrar sesión</string>
+    <!-- Accessibility -->
+    <string name="accessibility_loading">Cargando</string>
+</resources>
