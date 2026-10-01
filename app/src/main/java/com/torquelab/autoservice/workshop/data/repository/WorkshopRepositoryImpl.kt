@@ -118,6 +118,7 @@ class WorkshopRepositoryImpl @Inject constructor(
             priority = priority,
             estimatedMinutes = estimatedTime,
             laborPrice = laborPrice,
+            materialsCost = materialsCost ?: 0.0,
             status = TaskStatus.fromApi(status),
             mechanicId = mechanicId,
             mechanicName = mechanicName

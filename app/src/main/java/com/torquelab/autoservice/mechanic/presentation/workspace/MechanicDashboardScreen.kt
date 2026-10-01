@@ -314,8 +314,8 @@ fun MechanicOrderCard(order: MechanicOrder, onClick: () -> Unit) {
                     Text(text = order.totalTasks.toString(), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "Mano de obra", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = "S/ ${"%.2f".format(order.totalLaborCost)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(text = "Total estimado", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = "S/ ${"%.2f".format(order.totalLaborCost + order.totalMaterialsCost)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))

@@ -25,6 +25,7 @@ data class WorkshopTask(
     val priority: String,
     val estimatedMinutes: Int,
     val laborPrice: Double,
+    val materialsCost: Double,
     val status: TaskStatus,
     val mechanicId: Int?,
     val mechanicName: String? = null
