@@ -12,6 +12,7 @@ data class MechanicOrder(
     
     // UI specific formatted fields
     val vehicleName: String = "",
+    val vehiclePlate: String = "",
     val tasksCompleted: Int = 0,
     val totalTasks: Int = 0,
     val totalLaborCost: Double = 0.0,

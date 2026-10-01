@@ -9,6 +9,8 @@ interface WorkshopRepository {
 
     suspend fun getWorkOrders(): Result<List<WorkshopWorkOrder>>
 
+    suspend fun getFinancialSummary(): Result<com.torquelab.autoservice.workshop.domain.model.FinancialSummary>
+
     suspend fun createTask(input: CreateTaskInput): Result<Unit>
 
     suspend fun updateTask(input: UpdateTaskInput): Result<Unit>

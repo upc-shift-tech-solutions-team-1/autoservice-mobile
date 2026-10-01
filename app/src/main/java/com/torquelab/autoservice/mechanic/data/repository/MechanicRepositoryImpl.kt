@@ -30,7 +30,7 @@ class MechanicRepositoryImpl @Inject constructor(
                 .filter { it.mechanicId == mechanicId }
             
             val vehicles = fleetApi.vehicles()
-            val tasks = taskApi.getTasks(mechanicId = mechanicId)
+            val tasks = taskApi.getTasks()
 
             val mappedOrders = orders.map { order ->
                 val vehicle = vehicles.find { it.id == order.vehicleId }
@@ -48,6 +48,10 @@ class MechanicRepositoryImpl @Inject constructor(
                 val totalLaborCost = orderTasks.sumOf { it.laborPrice }
                 val totalMaterialsCost = orderTasks.sumOf { it.materialsCost ?: 0.0 }
 
+                val brand = vehicle?.brand?.takeIf { it.isNotBlank() } ?: "Vehículo"
+                val model = vehicle?.model ?: ""
+                val plate = vehicle?.plate?.takeIf { it.isNotBlank() } ?: "Sin placa"
+
                 MechanicOrder(
                     id = order.id,
                     trackingCode = order.trackingCode,
@@ -57,7 +61,8 @@ class MechanicRepositoryImpl @Inject constructor(
                     description = order.description,
                     status = order.status,
                     price = order.price,
-                    vehicleName = "${vehicle?.brand ?: "Vehículo"} ${vehicle?.model ?: ""}".trim(),
+                    vehicleName = "$brand $model".trim(),
+                    vehiclePlate = plate,
                     tasksCompleted = completedTasks,
                     totalTasks = totalTasks,
                     totalLaborCost = totalLaborCost,
@@ -90,6 +95,10 @@ class MechanicRepositoryImpl @Inject constructor(
             val totalLaborCost = tasks.sumOf { it.laborPrice }
             val totalMaterialsCost = tasks.sumOf { it.materialsCost ?: 0.0 }
 
+            val brand = vehicle?.brand?.takeIf { it.isNotBlank() } ?: "Vehículo"
+            val model = vehicle?.model ?: ""
+            val plate = vehicle?.plate?.takeIf { it.isNotBlank() } ?: "Sin placa"
+
             val mappedOrder = MechanicOrder(
                 id = order.id,
                 trackingCode = order.trackingCode,
@@ -99,7 +108,8 @@ class MechanicRepositoryImpl @Inject constructor(
                 description = order.description,
                 status = order.status,
                 price = order.price,
-                vehicleName = "${vehicle?.brand ?: "Vehículo"} ${vehicle?.model ?: ""}".trim(),
+                vehicleName = "$brand $model".trim(),
+                vehiclePlate = plate,
                 tasksCompleted = completedTasks,
                 totalTasks = totalTasks,
                 totalLaborCost = totalLaborCost,
