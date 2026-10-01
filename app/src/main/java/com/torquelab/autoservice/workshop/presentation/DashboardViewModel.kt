@@ -44,66 +44,46 @@ class DashboardViewModel @Inject constructor(
     fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            repository.getWorkOrders()
-                .onSuccess { orders ->
-                    val nonCancelledOrders = orders.filter { it.status != TaskStatus.CANCELLED }
-                    val activeOrders = nonCancelledOrders.filter { it.status == TaskStatus.IN_PROGRESS || it.status == TaskStatus.PENDING }
-                    
-                    val activeVehicles = activeOrders.map { it.vehicleId }.distinct().count()
-                    val activeCount = activeOrders.size
-                    val completedCount = nonCancelledOrders.count { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.DELIVERED }
-                    
-                    val allTasks = nonCancelledOrders.flatMap { it.tasks }
-                    
-                    val projectedIncome = allTasks.sumOf { it.laborPrice + it.materialsCost }
-                    
-                    val realizedTasks = nonCancelledOrders.filter { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.DELIVERED }.flatMap { it.tasks }
-                    val realizedIncome = realizedTasks.sumOf { it.laborPrice + it.materialsCost }
-                    
-                    val pendingTasks = nonCancelledOrders.filter { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS }.flatMap { it.tasks }
-                    val pendingIncome = pendingTasks.sumOf { it.laborPrice + it.materialsCost }
-                    
-                    // En el prototipo web, los costos operativos a veces son fijos, pero podemos inferirlo de los materiales para el demo.
-                    // o simularemos el valor de la web: sum of material costs.
-                    val operatingCosts = allTasks.sumOf { it.materialsCost } 
-                    
-                    val grossProfit = projectedIncome - operatingCosts
-                    val profitMargin = if (projectedIncome > 0) (grossProfit / projectedIncome) * 100 else 0.0
-                    
-                    val validOrdersForTicket = nonCancelledOrders.filter { it.tasks.isNotEmpty() }
-                    var profitable = 0
-                    var loss = 0
-                    validOrdersForTicket.forEach { o ->
-                        val rev = o.tasks.sumOf { it.laborPrice + it.materialsCost }
-                        val cost = o.tasks.sumOf { it.materialsCost }
-                        if (rev - cost >= 0) profitable++ else loss++
-                    }
-                    val averageTicket = if (validOrdersForTicket.isNotEmpty()) projectedIncome / validOrdersForTicket.size else 0.0
-                    
-                    val recent = orders.sortedByDescending { it.id }.take(4)
+            
+            val summaryResult = repository.getFinancialSummary()
+            val ordersResult = repository.getWorkOrders()
+            
+            if (ordersResult.isSuccess && summaryResult.isSuccess) {
+                val orders = ordersResult.getOrNull() ?: emptyList()
+                val summary = summaryResult.getOrNull()
+                
+                val nonCancelledOrders = orders.filter { it.status != TaskStatus.CANCELLED }
+                val activeOrders = nonCancelledOrders.filter { it.status == TaskStatus.IN_PROGRESS || it.status == TaskStatus.PENDING }
+                
+                val activeVehicles = activeOrders.map { it.vehicleId }.distinct().count()
+                val activeCount = activeOrders.size
+                val completedCount = nonCancelledOrders.count { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.DELIVERED }
+                
+                val recent = orders.sortedByDescending { it.id }.take(4)
 
+                if (summary != null) {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             activeVehicles = activeVehicles,
                             activeWorkOrders = activeCount,
                             completedOrders = completedCount,
-                            projectedIncome = projectedIncome,
-                            realizedIncome = realizedIncome,
-                            pendingIncome = pendingIncome,
-                            operatingCosts = operatingCosts,
-                            grossProfit = grossProfit,
-                            profitMargin = profitMargin,
-                            averageTicket = averageTicket,
-                            profitableOrders = profitable,
-                            lossOrders = loss,
+                            projectedIncome = summary.projectedRevenue,
+                            realizedIncome = summary.realizedRevenue,
+                            pendingIncome = summary.pendingRevenue,
+                            operatingCosts = summary.operatingCost,
+                            grossProfit = summary.grossProfit,
+                            profitMargin = summary.marginPercentage,
+                            averageTicket = summary.averageTicket,
+                            profitableOrders = summary.profitableOrders,
+                            lossOrders = summary.lossOrders,
                             recentOrders = recent
                         )
                     }
                 }
-                .onFailure {
-                    _uiState.update { it.copy(isLoading = false) }
-                }
+            } else {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 }

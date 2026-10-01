@@ -62,6 +62,10 @@ class WorkshopRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getFinancialSummary(): Result<com.torquelab.autoservice.workshop.domain.model.FinancialSummary> = runCatching {
+        workshopApi.getFinancialSummary().toDomain()
+    }
+
     override suspend fun createTask(input: CreateTaskInput): Result<Unit> = runCatching {
         taskApi.createTask(
             CreateTaskRequest(
