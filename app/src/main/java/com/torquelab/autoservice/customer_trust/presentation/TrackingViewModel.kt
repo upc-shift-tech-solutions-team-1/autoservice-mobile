@@ -64,6 +64,6 @@ class TrackingViewModel @Inject constructor(
     }
 
     fun resetSearch() {
-        _uiState.update { it.copy(order = null, error = null) }
+        _uiState.update { it.copy(searchCode = "", order = null, error = null) }
     }
 }
