@@ -9,7 +9,13 @@ data class WorkshopWorkOrder(
     val status: TaskStatus,
     val progress: Int,
     val tasks: List<WorkshopTask>,
-    val workshopId: String
+    val workshopId: String,
+    val customerName: String,
+    val vehiclePlate: String,
+    val startDate: String,
+    val estimatedDate: String,
+    val calculatedTotal: Double,
+    val isRisk: Boolean
 )
 
 data class WorkshopTask(

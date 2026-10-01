@@ -1,5 +1,9 @@
 package com.torquelab.autoservice.workshop.data.repository
 
+import com.torquelab.autoservice.customer_management.data.remote.CustomerApi
+import com.torquelab.autoservice.fleet.data.FleetApi
+import com.torquelab.autoservice.staff.data.remote.StaffApi
+import com.torquelab.autoservice.staff.data.remote.dto.MechanicDto
 import com.torquelab.autoservice.workshop.data.remote.TaskApi
 import com.torquelab.autoservice.workshop.data.remote.WorkshopApi
 import com.torquelab.autoservice.workshop.data.remote.dto.CreateTaskRequest
@@ -19,15 +23,42 @@ import javax.inject.Singleton
 @Singleton
 class WorkshopRepositoryImpl @Inject constructor(
     private val workshopApi: WorkshopApi,
-    private val taskApi: TaskApi
+    private val taskApi: TaskApi,
+    private val customerApi: CustomerApi,
+    private val fleetApi: FleetApi,
+    private val staffApi: StaffApi
 ) : WorkshopRepository {
 
     override suspend fun getWorkOrders(): Result<List<WorkshopWorkOrder>> = runCatching {
+        val customers = customerApi.getCustomers()
+        val vehicles = fleetApi.vehicles()
+        val mechanics = staffApi.getMechanics()
+        val allTasks = taskApi.getTasks()
+        
         workshopApi.getWorkOrders().map { order ->
-            val tasks = taskApi.getTasks(workOrderId = order.id).map { task ->
-                task.toDomain()
-            }
-            order.toDomain(tasks)
+            val customer = customers.find { it.id == order.customerId.toString() }
+            val vehicle = vehicles.find { it.id == order.vehicleId }
+            val tasks = allTasks.filter { it.workOrderId == order.id }.map { it.toDomain(mechanics) }
+            
+            val isRisk = order.status == "PENDING" && order.estimatedDate.isNotEmpty()
+
+            WorkshopWorkOrder(
+                id = order.id,
+                vehicleId = order.vehicleId,
+                customerId = order.customerId,
+                trackingCode = order.trackingCode,
+                description = order.description,
+                status = TaskStatus.fromApi(order.status),
+                progress = calculateProgress(tasks),
+                tasks = tasks,
+                workshopId = order.workshopId,
+                customerName = customer?.fullName ?: "---",
+                vehiclePlate = vehicle?.plate?.takeIf { it.isNotBlank() } ?: "---",
+                startDate = order.startDate,
+                estimatedDate = order.estimatedDate,
+                calculatedTotal = order.price,
+                isRisk = isRisk
+            )
         }
     }
 
@@ -76,28 +107,22 @@ class WorkshopRepositoryImpl @Inject constructor(
         Unit
     }
 
-    private fun WorkOrderDto.toDomain(tasks: List<WorkshopTask>) = WorkshopWorkOrder(
-        id = id,
-        vehicleId = vehicleId,
-        customerId = customerId,
-        trackingCode = trackingCode,
-        description = description,
-        status = TaskStatus.fromApi(status),
-        progress = calculateProgress(tasks),
-        tasks = tasks,
-        workshopId = workshopId
-    )
+    private fun TaskDto.toDomain(mechanics: List<MechanicDto>): WorkshopTask {
+        val mechanic = mechanics.find { it.id == mechanicId }
+        val mechanicName = mechanic?.fullName
 
-    private fun TaskDto.toDomain() = WorkshopTask(
-        id = id,
-        orderId = workOrderId,
-        description = description,
-        priority = priority,
-        estimatedMinutes = estimatedTime,
-        laborPrice = laborPrice,
-        status = TaskStatus.fromApi(status),
-        mechanicId = mechanicId
-    )
+        return WorkshopTask(
+            id = id,
+            orderId = workOrderId,
+            description = description,
+            priority = priority,
+            estimatedMinutes = estimatedTime,
+            laborPrice = laborPrice,
+            status = TaskStatus.fromApi(status),
+            mechanicId = mechanicId,
+            mechanicName = mechanicName
+        )
+    }
 
     private fun calculateProgress(tasks: List<WorkshopTask>): Int {
         if (tasks.isEmpty()) return 0
