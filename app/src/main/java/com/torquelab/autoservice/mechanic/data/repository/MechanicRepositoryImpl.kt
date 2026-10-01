@@ -30,7 +30,7 @@ class MechanicRepositoryImpl @Inject constructor(
                 .filter { it.mechanicId == mechanicId }
             
             val vehicles = fleetApi.vehicles()
-            val tasks = taskApi.getTasks(mechanicId = mechanicId)
+            val tasks = taskApi.getTasks()
 
             val mappedOrders = orders.map { order ->
                 val vehicle = vehicles.find { it.id == order.vehicleId }
