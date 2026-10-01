@@ -210,7 +210,7 @@ private fun WorkOrderCard(
     onUpdateStatus: (WorkshopTask) -> Unit
 ) {
     val backgroundColor = MaterialTheme.colorScheme.surface
-    val borderColor = if (order.isRisk) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant
+    val borderColor = if (order.isRisk) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant
     
     Card(
         modifier = Modifier.fillMaxWidth().padding(bottom = AutoServiceSpacing.Small),
@@ -232,20 +232,6 @@ private fun WorkOrderCard(
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    if (order.isRisk) {
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.error,
-                        ) {
-                            Text(
-                                text = "EN RIESGO",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                color = MaterialTheme.colorScheme.onError,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
                 }
                 
                 // Status Tag
