@@ -1,10 +1,13 @@
 package com.torquelab.autoservice.inventory.domain
 
+import com.torquelab.autoservice.inventory.domain.model.Product
+import com.torquelab.autoservice.inventory.domain.model.ProductStatus
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 data class InventoryItem(
     val id: Int = 0,
+    val code: String = "",
     val name: String = "",
     val category: String = "SPARE_PART",
     val brand: String = "",
@@ -18,12 +21,32 @@ data class InventoryItem(
     val presentation: String = "",
     val unitMeasure: String = "UNIT"
 ) {
-    val lowStock: Boolean get() = stock <= minStock
+    val currentStock: Int get() = stock
+    val minimumStock: Int get() = minStock
+    val lowStock: Boolean get() = currentStock <= minimumStock
     val profit: BigDecimal get() = unitPrice - purchasePrice
     val margin: BigDecimal get() = if (unitPrice.signum() == 0) BigDecimal.ZERO
         else profit.multiply(BigDecimal(100)).divide(unitPrice, 2, RoundingMode.HALF_UP)
-    fun matches(query: String): Boolean = listOf(name, brand, category, specification)
+    fun matches(query: String): Boolean = listOf(name, brand, category, specification, code)
         .any { it.contains(query.trim(), ignoreCase = true) }
+
+    fun toProduct(): Product = Product(
+        id = id,
+        code = code,
+        name = name,
+        category = category,
+        brand = brand,
+        unitPrice = unitPrice,
+        purchasePrice = purchasePrice,
+        currentStock = stock,
+        minimumStock = minStock,
+        status = if (stock <= minStock) ProductStatus.LOW_STOCK else ProductStatus.NORMAL,
+        image = image,
+        qualityTier = qualityTier,
+        specification = specification,
+        presentation = presentation,
+        unitMeasure = unitMeasure
+    )
 }
 
 enum class InventoryIssue { NAME, PRICE, MIN_STOCK }

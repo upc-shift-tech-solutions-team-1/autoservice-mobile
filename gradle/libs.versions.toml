@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.2"
+agp = "9.4.1"
 coreKtx = "1.19.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -18,6 +18,9 @@ hilt = "2.60.1"
 ksp = "2.3.10"
 
 hiltNavigationCompose = "1.3.0"
+mockito = "5.11.0"
+mockitoKotlin = "5.2.0"
+coroutinesTest = "1.8.0"
 
 
 
@@ -57,6 +60,11 @@ okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-i
 # Dependency Injection
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+
+# Testing
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
