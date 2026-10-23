@@ -1,5 +1,6 @@
-# Android Studio
+# IDEs and Editors
 .idea/
+.vscode/
 *.iml
 
 # Gradle

@@ -40,6 +40,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests.all {
+            it.jvmArgs("-Dnet.bytebuddy.experimental=true")
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -79,6 +85,9 @@ dependencies {
 
     // Unit Testing
     testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
 
     // Instrumented / UI Testing
     androidTestImplementation(platform(libs.androidx.compose.bom))

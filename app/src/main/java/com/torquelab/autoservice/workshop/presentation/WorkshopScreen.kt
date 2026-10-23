@@ -1,5 +1,23 @@
 package com.torquelab.autoservice.workshop.presentation
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +27,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -188,42 +209,144 @@ private fun WorkOrderCard(
     onCancelTask: (WorkshopTask) -> Unit,
     onUpdateStatus: (WorkshopTask) -> Unit
 ) {
-    AutoServiceCard {
-        Text(
-            text = stringResource(R.string.workshop_order_summary, order.id, order.vehicleId),
-            style = MaterialTheme.typography.titleMedium
-        )
-        Text(
-            text = order.description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = stringResource(R.string.workshop_tracking_code, order.trackingCode),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(AutoServiceSpacing.Small))
-        Text(
-            text = stringResource(
-                R.string.workshop_progress,
-                order.progress,
-                taskStatusLabel(order.status)
-            ),
-            style = MaterialTheme.typography.labelLarge
-        )
-        LinearProgressIndicator(
-            progress = { order.progress / 100f },
-            modifier = Modifier.fillMaxWidth()
-        )
-        order.tasks.forEach { task ->
-            TaskCard(
-                task = task,
-                onEdit = { onEditTask(task) },
-                onCancel = { onCancelTask(task) },
-                onUpdateStatus = { onUpdateStatus(task) }
+    val backgroundColor = MaterialTheme.colorScheme.surface
+    val borderColor = if (order.isRisk) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant
+    
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(bottom = AutoServiceSpacing.Small),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header: Code + Risk Badge + Status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = order.trackingCode,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                // Status Tag
+                val (statusBg, statusText) = when (order.status) {
+                    TaskStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                    TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                    TaskStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                    TaskStatus.DELIVERED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                    TaskStatus.CANCELLED -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
+                    else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = statusBg
+                ) {
+                    Text(
+                        text = taskStatusLabel(order.status).uppercase(),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = statusText,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Vehicle
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Text(
+                    text = order.vehiclePlate.takeIf { it.isNotBlank() } ?: "Sin placa",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Customer
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                Text(
+                    text = order.customerName,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Dates and Total Grid
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                InfoBox(label = "Ingreso", value = order.startDate.takeIf { it.isNotBlank() } ?: "---", modifier = Modifier.weight(1f))
+                InfoBox(label = "Entrega", value = order.estimatedDate.takeIf { it.isNotBlank() } ?: "---", modifier = Modifier.weight(1f))
+                InfoBox(label = "Total", value = "S/ ${"%.2f".format(order.calculatedTotal)}", modifier = Modifier.weight(1f))
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Progress
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Progreso de tareas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text("${order.progress}%", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { order.progress / 100f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
+
+            if (order.tasks.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Tareas", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                order.tasks.forEach { task ->
+                    TaskCard(
+                        task = task,
+                        onEdit = { onEditTask(task) },
+                        onCancel = { onCancelTask(task) },
+                        onUpdateStatus = { onUpdateStatus(task) }
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(14.dp))
+            .padding(12.dp)
+    ) {
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 4.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -234,42 +357,123 @@ private fun TaskCard(
     onCancel: () -> Unit,
     onUpdateStatus: () -> Unit
 ) {
-    AutoServiceCard(
-        modifier = Modifier.padding(top = AutoServiceSpacing.Small),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(AutoServiceSpacing.Small)
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(top = AutoServiceSpacing.Small),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Text(task.description, style = MaterialTheme.typography.titleSmall)
-        Text(
-            text = stringResource(
-                R.string.workshop_task_summary,
-                taskStatusLabel(task.status),
-                task.estimatedMinutes,
-                task.mechanicName ?: stringResource(R.string.workshop_unassigned)
-            ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = stringResource(R.string.workshop_task_details, task.priority, task.laborPrice),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Small)
-        ) {
-            TextButton(onClick = onUpdateStatus) {
-                Text(stringResource(R.string.workshop_status_action))
-            }
-            TextButton(onClick = onEdit) {
-                Text(stringResource(R.string.common_edit))
-            }
-            TextButton(
-                onClick = onCancel,
-                enabled = task.status != TaskStatus.COMPLETED &&
-                    task.status != TaskStatus.DELIVERED
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.common_delete))
+                Text(
+                    text = task.description,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                val (statusBg, statusText) = when (task.status) {
+                    TaskStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                    TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                    TaskStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                    TaskStatus.DELIVERED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+                    TaskStatus.CANCELLED -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
+                    else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = statusBg,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text(
+                        text = taskStatusLabel(task.status).uppercase(),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = statusText,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Mechanic
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    Text(
+                        text = task.mechanicName ?: stringResource(R.string.workshop_unassigned),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+                // Time
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    val hours = task.estimatedMinutes / 60
+                    val mins = task.estimatedMinutes % 60
+                    val timeStr = if (hours > 0 && mins > 0) "${hours}h ${mins}m" else if (hours > 0) "${hours}h" else "${mins}m"
+                    Text(
+                        text = timeStr,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+                // Priority
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Default.Flag, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    Text(
+                        text = task.priority,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Default.AttachMoney, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                Text(
+                    text = "S/ ${"%.2f".format(task.laborPrice)}",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onUpdateStatus) {
+                    Text(stringResource(R.string.workshop_status_action), fontSize = 12.sp)
+                }
+                TextButton(onClick = onEdit) {
+                    Text(stringResource(R.string.common_edit), fontSize = 12.sp)
+                }
+                TextButton(
+                    onClick = onCancel,
+                    enabled = task.status != TaskStatus.COMPLETED && task.status != TaskStatus.DELIVERED
+                ) {
+                    Text(
+                        text = stringResource(R.string.common_delete), 
+                        color = if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.DELIVERED) MaterialTheme.colorScheme.error else Color.Gray, 
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

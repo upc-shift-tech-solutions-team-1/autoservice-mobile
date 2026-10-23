@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -93,25 +94,35 @@ fun MechanicOrderExecutionScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
+                Text(
+                    text = "Información de la orden",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.CarRepair, contentDescription = null, tint = Color(0xFF0B1680), modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.CarRepair, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
-                            Text(text = state.order?.vehicleName ?: "Vehículo", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            val vehicleName = state.order?.vehicleName?.takeIf { it.isNotBlank() } ?: "Vehículo"
+                            Text(text = vehicleName, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
+                            
+                            val vehiclePlate = state.order?.vehiclePlate?.takeIf { it.isNotBlank() } ?: "Sin placa"
+                            Text(text = vehiclePlate, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         }
                     }
                 }
@@ -120,14 +131,14 @@ fun MechanicOrderExecutionScreen(
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Diagnóstico técnico", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(text = "Diagnóstico técnico", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             text = "El diagnóstico se adjuntará a las propuestas y tareas completadas.",
-                            color = Color(0xFF64748B),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -149,8 +160,8 @@ fun MechanicOrderExecutionScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Tareas técnicas", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("Ejecute o proponga tareas", fontSize = 14.sp, color = Color(0xFF64748B))
+                        Text("Tareas técnicas", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+                        Text("Ejecute o proponga tareas", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Button(onClick = { showProposeDialog = true }) {
                         Icon(Icons.Default.Add, contentDescription = null)
@@ -163,7 +174,7 @@ fun MechanicOrderExecutionScreen(
             if (state.tasks.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("No existen tareas registradas.", color = Color(0xFF64748B))
+                        Text("No existen tareas registradas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -173,6 +184,10 @@ fun MechanicOrderExecutionScreen(
                         onStart = { onStartTask(task.id) },
                         onComplete = { onCompleteTask(task.id) }
                     )
+                }
+
+                item {
+                    OrderProgressBar(tasks = state.tasks)
                 }
             }
         }
@@ -212,12 +227,12 @@ fun TaskCard(
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = task.description, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Text(text = task.description, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
                 
                 val statusText = when {
                     task.status == TaskStatus.PENDING && task.adminReviewStatus == "SUBMITTED" -> "ESPERANDO"
@@ -230,19 +245,19 @@ fun TaskCard(
                     text = statusText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0B1680)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row {
-                Text(text = task.priority, fontSize = 12.sp, color = Color(0xFF64748B))
+                Text(text = task.priority, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "${task.estimatedTime} min", fontSize = 12.sp, color = Color(0xFF64748B))
+                Text(text = "${task.estimatedTime} min", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             
             if (task.parts.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Materiales: ${task.parts.joinToString { "${it.quantity}x ${it.name}" }}", fontSize = 12.sp, color = Color(0xFF64748B))
+                Text(text = "Materiales: ${task.parts.joinToString { "${it.quantity}x ${it.name}" }}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -255,7 +270,10 @@ fun TaskCard(
                     }
                 }
                 if (task.status == TaskStatus.IN_PROGRESS) {
-                    Button(onClick = onComplete, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A))) {
+                    Button(
+                        onClick = onComplete,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
                         Icon(Icons.Default.Check, contentDescription = null)
                         Text("Completar")
                     }
@@ -279,7 +297,7 @@ fun ProposeTaskDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nueva propuesta técnica") },
+        title = { Text("Nueva propuesta técnica", color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -297,7 +315,7 @@ fun ProposeTaskDialog(
                     onValueChange = { estimatedTime = it },
                     label = { Text("Tiempo estimado (min)") }
                 )
-                Text("Nota: Se enviará sin materiales adicionales en el prototipo.", fontSize = 12.sp)
+                Text("Nota: Se enviará sin materiales adicionales en el prototipo.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         confirmButton = {
@@ -318,4 +336,65 @@ fun ProposeTaskDialog(
             }
         }
     )
+}
+
+@Composable
+fun OrderProgressBar(tasks: List<MechanicTask>) {
+    val completed = tasks.count { it.status == TaskStatus.COMPLETED }
+    val total = tasks.size
+    val progressPercent = if (total > 0) (completed.toFloat() / total.toFloat()) else 0f
+    val progressPercentInt = (progressPercent * 100).toInt()
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Tareas", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("$completed / $total", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Progreso", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("$progressPercentInt%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                if (progressPercent > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progressPercent)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF5CB85C)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (progressPercent > 0.1f) {
+                            Text(
+                                text = "$progressPercentInt%",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

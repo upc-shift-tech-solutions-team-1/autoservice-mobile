@@ -11,4 +11,7 @@ interface WorkshopApi {
 
     @GET("workorders/{id}")
     suspend fun getWorkOrder(@Path("id") id: Int): WorkOrderDto
+
+    @GET("financial-summary")
+    suspend fun getFinancialSummary(): com.torquelab.autoservice.workshop.data.remote.dto.FinancialSummaryDto
 }
