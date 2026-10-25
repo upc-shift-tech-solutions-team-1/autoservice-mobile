@@ -88,4 +88,71 @@ class UpdateStockUseCaseTest {
         assertTrue(result.isLowStock)
         verify(repository).saveProduct(expectedUpdatedProduct)
     }
+
+    @Test
+    fun `when IN movement receives materials increases stock and saves product`() = runTest {
+        // Arrange
+        val product = Product(
+            id = 20,
+            code = "P-020",
+            name = "Filtro de aceite",
+            currentStock = 5,
+            minimumStock = 3,
+            status = ProductStatus.NORMAL,
+            unitPrice = BigDecimal("25.00")
+        )
+
+        val expectedProduct = product.copy(
+            currentStock = 10,
+            status = ProductStatus.NORMAL
+        )
+
+        whenever(repository.saveProduct(expectedProduct))
+            .thenReturn(Result.success(expectedProduct))
+
+        // Act
+        val result = useCase.invoke(
+            product = product,
+            quantity = 5,
+            movementType = MovementType.IN,
+            reason = "Recepción de proveedor"
+        )
+
+        // Assert
+        assertEquals(10, result.currentStock)
+        assertEquals(ProductStatus.NORMAL, result.status)
+        verify(repository).saveProduct(expectedProduct)
+    }
+
+    @Test
+    fun `when movement quantity is zero rejects operation without saving`() = runTest {
+        // Arrange
+        val product = Product(
+            id = 21,
+            code = "P-021",
+            name = "Pastillas de freno",
+            currentStock = 10,
+            minimumStock = 2,
+            unitPrice = BigDecimal("100.00")
+        )
+
+        // Act
+        val exception = runCatching {
+            useCase.invoke(
+                product = product,
+                quantity = 0,
+                movementType = MovementType.IN,
+                reason = "Recepción inválida"
+            )
+        }.exceptionOrNull()
+
+        // Assert
+        assertTrue(exception is IllegalArgumentException)
+        assertEquals(
+            "La cantidad debe ser mayor a 0",
+            exception?.message
+        )
+        verify(repository, never()).saveProduct(any())
+    }
+
 }
