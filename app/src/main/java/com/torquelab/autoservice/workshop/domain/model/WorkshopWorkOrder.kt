@@ -7,15 +7,15 @@ data class WorkshopWorkOrder(
     val trackingCode: String,
     val description: String,
     val status: TaskStatus,
-    val progress: Int,
-    val tasks: List<WorkshopTask>,
-    val workshopId: String,
-    val customerName: String,
-    val vehiclePlate: String,
-    val startDate: String,
-    val estimatedDate: String,
-    val calculatedTotal: Double,
-    val isRisk: Boolean
+    val progress: Int = 0,
+    val tasks: List<WorkshopTask> = emptyList(),
+    val workshopId: String = "",
+    val customerName: String = "",
+    val vehiclePlate: String = "",
+    val startDate: String = "",
+    val estimatedDate: String = "",
+    val calculatedTotal: Double = 0.0,
+    val isRisk: Boolean = false
 )
 
 data class WorkshopTask(
