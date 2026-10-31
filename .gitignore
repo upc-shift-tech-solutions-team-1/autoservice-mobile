@@ -1,6 +1,5 @@
 # IDEs and Editors
 .idea/
-.vscode/
 *.iml
 
 # Gradle
@@ -24,7 +23,6 @@ captures/
 # Signing / secrets
 *.jks
 *.keystore
-.env
 secrets.properties
 ACCEPTANCE_WORKSHOP_STAFF.md
 
@@ -35,3 +33,5 @@ branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
+config.bat
+node_modules
