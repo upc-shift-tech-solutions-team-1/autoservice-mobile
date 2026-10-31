@@ -27,8 +27,34 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
+    val releaseStoreFile = providers.gradleProperty("autoserviceSigningStoreFile").orNull
+    val releaseStorePassword = providers.gradleProperty("autoserviceSigningStorePassword").orNull
+    val releaseKeyAlias = providers.gradleProperty("autoserviceSigningKeyAlias").orNull
+    val releaseKeyPassword = providers.gradleProperty("autoserviceSigningKeyPassword").orNull
+
+    val releaseSigningReady = listOf(
+        releaseStoreFile,
+        releaseStorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword
+    ).all { !it.isNullOrBlank() }
+
+    signingConfigs {
+        if (releaseSigningReady) {
+            create("autoserviceRelease") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningReady) {
+                signingConfig = signingConfigs.getByName("autoserviceRelease")
+            }
             optimization {
                 enable = false
             }
