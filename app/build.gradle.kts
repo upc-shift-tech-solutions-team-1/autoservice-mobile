@@ -1,4 +1,4 @@
-﻿plugins {
+plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
@@ -27,8 +27,34 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
+    val releaseStoreFile = providers.gradleProperty("autoserviceSigningStoreFile").orNull
+    val releaseStorePassword = providers.gradleProperty("autoserviceSigningStorePassword").orNull
+    val releaseKeyAlias = providers.gradleProperty("autoserviceSigningKeyAlias").orNull
+    val releaseKeyPassword = providers.gradleProperty("autoserviceSigningKeyPassword").orNull
+
+    val releaseSigningReady = listOf(
+        releaseStoreFile,
+        releaseStorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword
+    ).all { !it.isNullOrBlank() }
+
+    signingConfigs {
+        if (releaseSigningReady) {
+            create("autoserviceRelease") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningReady) {
+                signingConfig = signingConfigs.getByName("autoserviceRelease")
+            }
             optimization {
                 enable = false
             }
@@ -88,6 +114,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation(libs.okhttp.mockwebserver)
 
     // Instrumented / UI Testing
     androidTestImplementation(platform(libs.androidx.compose.bom))
