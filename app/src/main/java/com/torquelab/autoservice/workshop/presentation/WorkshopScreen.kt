@@ -1,707 +1,220 @@
 package com.torquelab.autoservice.workshop.presentation
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.torquelab.autoservice.R
-import com.torquelab.autoservice.shared.ui.components.AutoServiceCard
-import com.torquelab.autoservice.shared.ui.components.AutoServiceConfirmationDialog
-import com.torquelab.autoservice.shared.ui.components.AutoServiceEmptyState
-import com.torquelab.autoservice.shared.ui.components.AutoServiceErrorState
-import com.torquelab.autoservice.shared.ui.components.AutoServiceLoadingState
-import com.torquelab.autoservice.shared.ui.theme.AutoServiceSpacing
-import com.torquelab.autoservice.staff.domain.model.Mechanic
-import com.torquelab.autoservice.workshop.domain.model.TaskStatus
-import com.torquelab.autoservice.workshop.domain.model.UpdateTaskInput
-import com.torquelab.autoservice.workshop.domain.model.WorkshopTask
-import com.torquelab.autoservice.workshop.domain.model.WorkshopWorkOrder
+import com.torquelab.autoservice.shared.ui.components.OperationChoice
+import com.torquelab.autoservice.shared.ui.components.OperationDialog
+import com.torquelab.autoservice.inventory.domain.InventoryItem
+import com.torquelab.autoservice.workshop.domain.model.*
 
 @Composable
 fun WorkshopRoute(viewModel: WorkshopViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) { viewModel.load() }
-    val uiState by viewModel.uiState.collectAsState()
-
-    WorkshopScreen(
-        uiState = uiState,
-        onRetry = viewModel::load,
-        onCreateTask = viewModel::createTask,
-        onUpdateTask = viewModel::updateTask,
-        onCancelTask = viewModel::cancelTask,
-        onUpdateTaskStatus = viewModel::updateTaskStatus
-    )
+    val state by viewModel.uiState.collectAsState()
+    WorkshopScreen(state, viewModel::load, viewModel::createTask, viewModel::updateTask,
+        viewModel::cancelTask, viewModel::updateTaskStatus, viewModel::loadOptions,
+        viewModel::createOrder, viewModel::updateOrder, viewModel::createTaskWithParts)
 }
 
 @Composable
 fun WorkshopScreen(
-    uiState: WorkshopUiState,
-    onRetry: () -> Unit,
+    uiState: WorkshopUiState, onRetry: () -> Unit,
     onCreateTask: (Int, String, String, Int, Double, Int?) -> Unit,
-    onUpdateTask: (UpdateTaskInput) -> Unit,
-    onCancelTask: (Int) -> Unit,
-    onUpdateTaskStatus: (Int, TaskStatus) -> Unit
+    onUpdateTask: (UpdateTaskInput) -> Unit, onCancelTask: (Int) -> Unit,
+    onUpdateTaskStatus: (Int, TaskStatus) -> Unit,
+    onLoadOptions: () -> Unit = {}, onCreateOrder: (CreateWorkOrderInput) -> Unit = {},
+    onUpdateOrder: (WorkshopWorkOrder, String?) -> Unit = { _, _ -> },
+    onCreateTaskWithParts: ((CreateTaskInput) -> Unit)? = null
 ) {
-    var showTaskForm by remember { mutableStateOf(false) }
-    var taskToEdit by remember { mutableStateOf<WorkshopTask?>(null) }
-    var taskToCancel by remember { mutableStateOf<WorkshopTask?>(null) }
-    var taskToUpdateStatus by remember { mutableStateOf<WorkshopTask?>(null) }
-
-    when {
-        uiState.isLoading -> AutoServiceLoadingState()
-        uiState.errorMessage != null -> AutoServiceErrorState(
-            title = stringResource(R.string.common_error_title),
-            description = uiState.errorMessage,
-            retryText = stringResource(R.string.common_retry),
-            onRetry = onRetry
-        )
-        uiState.workOrders.isEmpty() -> AutoServiceEmptyState(
-            title = stringResource(R.string.workshop_empty_title),
-            description = stringResource(R.string.workshop_empty_description)
-        )
-        else -> Column(
-            modifier = Modifier.padding(AutoServiceSpacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Medium)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.workshop_title),
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Text(
-                        text = stringResource(R.string.workshop_description),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Button(onClick = { showTaskForm = true }) {
-                    Text(stringResource(R.string.workshop_add_task))
-                }
-            }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Medium)
-            ) {
-                items(uiState.workOrders, key = { it.id }) { order ->
-                    WorkOrderCard(
-                        order = order,
-                        onEditTask = { taskToEdit = it },
-                        onCancelTask = { taskToCancel = it },
-                        onUpdateStatus = { taskToUpdateStatus = it }
-                    )
-                }
-            }
+    var createOrder by remember { mutableStateOf(false) }
+    var createTask by remember { mutableStateOf(false) }
+    var editingTask by remember { mutableStateOf<WorkshopTask?>(null) }
+    var deletingTask by remember { mutableStateOf<WorkshopTask?>(null) }
+    var detailId by remember { mutableStateOf<Int?>(null) }
+    var query by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf("") }
+    LaunchedEffect(uiState.savedVersion) { createOrder = false; createTask = false; editingTask = null; deletingTask = null }
+    val active = uiState.workOrders.filterNot { it.closed }
+    val clipboard = LocalClipboardManager.current
+    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Órdenes de trabajo", style = MaterialTheme.typography.headlineSmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { onLoadOptions(); createOrder = true }, enabled = !uiState.isSubmitting) { Text("Nueva orden") }
+            OutlinedButton(onClick = { onLoadOptions(); createTask = true }, enabled = active.isNotEmpty() && !uiState.isSubmitting) { Text("Nueva tarea") }
         }
-    }
-
-    if (showTaskForm) {
-        TaskEditorDialog(
-            title = stringResource(R.string.workshop_add_task),
-            orders = uiState.workOrders,
-            mechanics = uiState.mechanics,
-            task = null,
-            isSubmitting = uiState.isSubmitting,
-            onDismiss = { showTaskForm = false },
-            onCreate = { orderId, description, priority, minutes, price, mechanicId ->
-                showTaskForm = false
-                onCreateTask(orderId, description, priority, minutes, price, mechanicId)
-            },
-            onUpdate = {}
-        )
-    }
-
-    taskToEdit?.let { task ->
-        TaskEditorDialog(
-            title = stringResource(R.string.workshop_edit_task),
-            orders = uiState.workOrders,
-            mechanics = uiState.mechanics,
-            task = task,
-            isSubmitting = uiState.isSubmitting,
-            onDismiss = { taskToEdit = null },
-            onCreate = { _, _, _, _, _, _ -> },
-            onUpdate = { input ->
-                taskToEdit = null
-                onUpdateTask(input)
-            }
-        )
-    }
-
-    taskToCancel?.let { task ->
-        AutoServiceConfirmationDialog(
-            title = stringResource(R.string.workshop_cancel_task_title),
-            message = stringResource(R.string.workshop_cancel_task_message),
-            confirmText = stringResource(R.string.workshop_cancel_task),
-            dismissText = stringResource(R.string.common_cancel),
-            onConfirm = {
-                taskToCancel = null
-                onCancelTask(task.id)
-            },
-            onDismiss = { taskToCancel = null }
-        )
-    }
-
-    taskToUpdateStatus?.let { task ->
-        StatusDialog(
-            currentStatus = task.status,
-            onDismiss = { taskToUpdateStatus = null },
-            onStatusSelected = { status ->
-                taskToUpdateStatus = null
-                onUpdateTaskStatus(task.id, status)
-            }
-        )
-    }
-}
-
-@Composable
-private fun WorkOrderCard(
-    order: WorkshopWorkOrder,
-    onEditTask: (WorkshopTask) -> Unit,
-    onCancelTask: (WorkshopTask) -> Unit,
-    onUpdateStatus: (WorkshopTask) -> Unit
-) {
-    val backgroundColor = MaterialTheme.colorScheme.surface
-    val borderColor = if (order.isRisk) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant
-    
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = AutoServiceSpacing.Small),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        border = BorderStroke(1.dp, borderColor)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Code + Risk Badge + Status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = order.trackingCode,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                // Status Tag
-                val (statusBg, statusText) = when (order.status) {
-                    TaskStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-                    TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-                    TaskStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-                    TaskStatus.DELIVERED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-                    TaskStatus.CANCELLED -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
-                    else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-                }
-                
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = statusBg
-                ) {
-                    Text(
-                        text = taskStatusLabel(order.status).uppercase(),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = statusText,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Vehicle
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Text(
-                    text = order.vehiclePlate.takeIf { it.isNotBlank() } ?: "Sin placa",
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 16.sp
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            // Customer
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                Text(
-                    text = order.customerName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Dates and Total Grid
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                InfoBox(label = "Ingreso", value = order.startDate.takeIf { it.isNotBlank() } ?: "---", modifier = Modifier.weight(1f))
-                InfoBox(label = "Entrega", value = order.estimatedDate.takeIf { it.isNotBlank() } ?: "---", modifier = Modifier.weight(1f))
-                InfoBox(label = "Total", value = "S/ ${"%.2f".format(order.calculatedTotal)}", modifier = Modifier.weight(1f))
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Progress
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Progreso de tareas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                Text("${order.progress}%", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { order.progress / 100f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-
-            if (order.tasks.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Tareas", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-                order.tasks.forEach { task ->
-                    TaskCard(
-                        task = task,
-                        onEdit = { onEditTask(task) },
-                        onCancel = { onCancelTask(task) },
-                        onUpdateStatus = { onUpdateStatus(task) }
-                    )
-                }
-            }
+        OutlinedTextField(query, { query = it }, label = { Text("Buscar código, placa o cliente") }, modifier = Modifier.fillMaxWidth())
+        OperationChoice("Estado", status, listOf("" to "Todos") + listOf("PENDING", "IN_PROGRESS", "FINISHED", "DELIVERED", "CANCELLED").map { it to it }, { status = it })
+        if (uiState.isLoading || uiState.isSubmitting) LinearProgressIndicator(Modifier.fillMaxWidth())
+        uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        TextButton(onClick = onRetry, enabled = !uiState.isSubmitting) { Text("Actualizar") }
+        val visible = uiState.workOrders.filter { order ->
+            (status.isEmpty() || order.status.toApiValue() == status) &&
+                listOf(order.trackingCode, order.vehiclePlate, order.customerName).any { it.contains(query, true) }
         }
-    }
-}
-
-@Composable
-fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(14.dp))
-            .padding(12.dp)
-    ) {
-        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text(
-            text = value,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(top = 4.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-private fun TaskCard(
-    task: WorkshopTask,
-    onEdit: () -> Unit,
-    onCancel: () -> Unit,
-    onUpdateStatus: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(top = AutoServiceSpacing.Small),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = task.description,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                val (statusBg, statusText) = when (task.status) {
-                    TaskStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-                    TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-                    TaskStatus.COMPLETED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-                    TaskStatus.DELIVERED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-                    TaskStatus.CANCELLED -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
-                    else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-                }
-                
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = statusBg,
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text(
-                        text = taskStatusLabel(task.status).uppercase(),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = statusText,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Mechanic
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                    Text(
-                        text = task.mechanicName ?: stringResource(R.string.workshop_unassigned),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                }
-                // Time
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                    val hours = task.estimatedMinutes / 60
-                    val mins = task.estimatedMinutes % 60
-                    val timeStr = if (hours > 0 && mins > 0) "${hours}h ${mins}m" else if (hours > 0) "${hours}h" else "${mins}m"
-                    Text(
-                        text = timeStr,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                }
-                // Priority
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Default.Flag, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                    Text(
-                        text = task.priority,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Default.AttachMoney, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                Text(
-                    text = "S/ ${"%.2f".format(task.laborPrice)}",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onUpdateStatus) {
-                    Text(stringResource(R.string.workshop_status_action), fontSize = 12.sp)
-                }
-                TextButton(onClick = onEdit) {
-                    Text(stringResource(R.string.common_edit), fontSize = 12.sp)
-                }
-                TextButton(
-                    onClick = onCancel,
-                    enabled = task.status != TaskStatus.COMPLETED && task.status != TaskStatus.DELIVERED
-                ) {
-                    Text(
-                        text = stringResource(R.string.common_delete), 
-                        color = if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.DELIVERED) MaterialTheme.colorScheme.error else Color.Gray, 
-                        fontSize = 12.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TaskEditorDialog(
-    title: String,
-    orders: List<WorkshopWorkOrder>,
-    mechanics: List<Mechanic>,
-    task: WorkshopTask?,
-    isSubmitting: Boolean,
-    onDismiss: () -> Unit,
-    onCreate: (Int, String, String, Int, Double, Int?) -> Unit,
-    onUpdate: (UpdateTaskInput) -> Unit
-) {
-    var description by remember(task?.id) { mutableStateOf(task?.description.orEmpty()) }
-    var priority by remember(task?.id) { mutableStateOf(task?.priority ?: "MEDIUM") }
-    var minutes by remember(task?.id) { mutableStateOf(task?.estimatedMinutes?.toString() ?: "60") }
-    var price by remember(task?.id) { mutableStateOf(task?.laborPrice?.toString() ?: "0") }
-    var selectedOrderId by remember(task?.id) { mutableStateOf(task?.orderId ?: orders.firstOrNull()?.id) }
-    var selectedMechanicId by remember(task?.id) { mutableStateOf(task?.mechanicId) }
-    var priorityExpanded by remember { mutableStateOf(false) }
-    var mechanicExpanded by remember { mutableStateOf(false) }
-    var orderExpanded by remember { mutableStateOf(false) }
-
-    val validMinutes = minutes.toIntOrNull()
-    val validPrice = price.toDoubleOrNull()
-    val canSave = selectedOrderId != null &&
-        description.isNotBlank() &&
-        priority.isNotBlank() &&
-        validMinutes != null && validMinutes > 0 &&
-        validPrice != null && validPrice >= 0 &&
-        !isSubmitting
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Small)) {
-                if (task == null) {
-                    SelectionButton(
-                        label = stringResource(R.string.workshop_order),
-                        value = selectedOrderId?.let { "#$it" }
-                            ?: stringResource(R.string.workshop_select_order),
-                        expanded = orderExpanded,
-                        onExpandedChange = { orderExpanded = it }
-                    ) {
-                        orders.forEach { order ->
-                            DropdownMenuItem(
-                                text = { Text("#${order.id}") },
-                                onClick = {
-                                    selectedOrderId = order.id
-                                    orderExpanded = false
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (visible.isEmpty() && !uiState.isLoading) item { Text("No hay órdenes para mostrar. Cree un cliente, vehículo y mecánico antes de registrar una orden.") }
+            items(visible, key = { it.id }) { order ->
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(order.trackingCode, style = MaterialTheme.typography.titleLarge)
+                        Text("${order.vehiclePlate} · ${order.customerName}")
+                        Text("${order.description} · ${order.status.toApiValue()}")
+                        Text("Entrega estimada: ${order.estimatedDate} · Total: S/ ${"%.2f".format(order.calculatedTotal)}")
+                        LinearProgressIndicator(progress = { order.progress / 100f }, modifier = Modifier.fillMaxWidth())
+                        Row {
+                            TextButton(onClick = { detailId = order.id }) { Text("Detalle / calidad") }
+                            TextButton(onClick = { clipboard.setText(AnnotatedString(order.trackingCode)) }) { Text("Copiar seguimiento") }
+                        }
+                        order.tasks.forEach { task ->
+                            HorizontalDivider()
+                            Text(task.description, style = MaterialTheme.typography.titleMedium)
+                            Text("${task.status.toApiValue()} · ${task.adminReviewStatus} · ${task.mechanicName ?: "Sin asignar"}")
+                            Text("${task.estimatedMinutes} min · S/ ${"%.2f".format(task.laborPrice + task.materialsCost)}")
+                            task.parts.forEach { Text("${it.quantity} × ${it.name}") }
+                            task.technicalDiagnosis.takeIf(String::isNotBlank)?.let { Text("Diagnóstico: $it") }
+                            task.customerExplanation.takeIf(String::isNotBlank)?.let { Text("Explicación: $it") }
+                            task.internalObservation.takeIf(String::isNotBlank)?.let { Text("Observación interna: $it") }
+                            task.evidenceRegistered.takeIf(String::isNotBlank)?.let { Text("Evidencia: $it") }
+                            Row {
+                                TextButton(onClick = { editingTask = task }, enabled = !order.closed && !uiState.isSubmitting) { Text("Editar / cotizar") }
+                                val next = when {
+                                    task.status == TaskStatus.PENDING && task.adminReviewStatus == "APPROVED" -> TaskStatus.IN_PROGRESS
+                                    task.status == TaskStatus.IN_PROGRESS -> TaskStatus.COMPLETED
+                                    else -> null
                                 }
-                            )
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text(stringResource(R.string.workshop_task_description)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                SelectionButton(
-                    label = stringResource(R.string.workshop_priority),
-                    value = priority,
-                    expanded = priorityExpanded,
-                    onExpandedChange = { priorityExpanded = it }
-                ) {
-                    listOf("LOW", "MEDIUM", "HIGH").forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                priority = option
-                                priorityExpanded = false
+                                if (next != null) TextButton(onClick = { onUpdateTaskStatus(task.id, next) }, enabled = !order.closed && !uiState.isSubmitting) { Text(if (next == TaskStatus.IN_PROGRESS) "Iniciar" else "Completar") }
+                                TextButton(onClick = { deletingTask = task }, enabled = !order.closed && !uiState.isSubmitting && task.status !in setOf(TaskStatus.COMPLETED, TaskStatus.DELIVERED)) { Text("Eliminar") }
                             }
-                        )
-                    }
-                }
-                OutlinedTextField(
-                    value = minutes,
-                    onValueChange = { minutes = it.filter(Char::isDigit) },
-                    label = { Text(stringResource(R.string.workshop_estimated_minutes)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it.filter { char -> char.isDigit() || char == '.' } },
-                    label = { Text(stringResource(R.string.workshop_labor_price)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                SelectionButton(
-                    label = stringResource(R.string.workshop_mechanic),
-                    value = mechanics.firstOrNull { it.id == selectedMechanicId }?.fullName
-                        ?: stringResource(R.string.workshop_unassigned),
-                    expanded = mechanicExpanded,
-                    onExpandedChange = { mechanicExpanded = it }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.workshop_unassigned)) },
-                        onClick = {
-                            selectedMechanicId = null
-                            mechanicExpanded = false
                         }
-                    )
-                    mechanics.forEach { mechanic ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    stringResource(
-                                        R.string.staff_mechanic_option,
-                                        mechanic.fullName,
-                                        mechanic.specialty,
-                                        mechanic.assignedTasks,
-                                        mechanic.maxCapacity
-                                    )
-                                )
-                            },
-                            enabled = mechanic.isAvailable || mechanic.id == selectedMechanicId,
-                            onClick = {
-                                selectedMechanicId = mechanic.id
-                                mechanicExpanded = false
-                            }
-                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val orderId = selectedOrderId
-                    val duration = validMinutes
-                    val laborPrice = validPrice
-                    if (orderId != null && duration != null && laborPrice != null) {
-                        if (task == null) {
-                            onCreate(orderId, description.trim(), priority, duration, laborPrice, selectedMechanicId)
-                        } else {
-                            onUpdate(
-                                UpdateTaskInput(
-                                    taskId = task.id,
-                                    description = description.trim(),
-                                    priority = priority,
-                                    estimatedMinutes = duration,
-                                    laborPrice = laborPrice,
-                                    mechanicId = selectedMechanicId,
-                                    status = task.status
-                                )
-                            )
-                        }
-                    }
-                },
-                enabled = canSave
-            ) {
-                Text(stringResource(R.string.common_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
-            }
         }
-    )
-}
-
-@Composable
-private fun SelectionButton(
-    label: String,
-    value: String,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    menu: @Composable () -> Unit
-) {
-    Column {
-        OutlinedButton(
-            onClick = { onExpandedChange(!expanded) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("$label: $value")
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) }
-        ) {
-            menu()
-        }
+    }
+    if (createOrder) OrderCreateDialog(uiState, { createOrder = false }, onCreateOrder)
+    if (createTask || editingTask != null) TaskFormDialog(uiState, editingTask, { createTask = false; editingTask = null }, { input ->
+        if (onCreateTaskWithParts != null) onCreateTaskWithParts(input)
+        else onCreateTask(input.orderId, input.description, input.priority, input.estimatedMinutes, input.laborPrice, input.mechanicId)
+    }, onUpdateTask)
+    deletingTask?.let { task ->
+        AlertDialog(onDismissRequest = { deletingTask = null }, title = { Text("Eliminar tarea") }, text = { Text("Se eliminará ${task.description}. Esta acción será procesada por el taller.") },
+            confirmButton = { TextButton(onClick = { onCancelTask(task.id) }, enabled = !uiState.isSubmitting) { Text("Eliminar") } },
+            dismissButton = { TextButton(onClick = { deletingTask = null }) { Text("Cancelar") } })
+    }
+    uiState.workOrders.find { it.id == detailId }?.let { order ->
+        OrderDetailDialog(order, uiState, { detailId = null }, onUpdateOrder)
     }
 }
 
 @Composable
-private fun StatusDialog(
-    currentStatus: TaskStatus,
-    onDismiss: () -> Unit,
-    onStatusSelected: (TaskStatus) -> Unit
-) {
-    val statuses = listOf(TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.workshop_status_title)) },
-        text = {
-            Column {
-                statuses.forEach { status ->
-                    TextButton(
-                        onClick = { onStatusSelected(status) },
-                        enabled = status != currentStatus,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(taskStatusLabel(status))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
-            }
-        }
-    )
+private fun OrderCreateDialog(state: WorkshopUiState, onClose: () -> Unit, onSave: (CreateWorkOrderInput) -> Unit) {
+    var vehicleId by remember { mutableStateOf(0) }
+    var mechanicId by remember { mutableStateOf(0) }
+    var description by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf("") }
+    val vehicle = state.options.vehicles.find { it.id == vehicleId }
+    val dateError = validateEstimatedDate(null, date, null)
+    OperationDialog("Nueva orden", state.isSubmitting || state.optionsLoading, state.errorMessage,
+        vehicle != null && vehicle.customerId > 0 && mechanicId > 0 && description.isNotBlank() && dateError == null,
+        onClose, { onSave(CreateWorkOrderInput(vehicleId, vehicle!!.customerId, mechanicId, description.trim(), date)) }) {
+        OperationChoice("Vehículo", vehicleId.toString(), state.options.vehicles.map { it.id.toString() to "${it.plate} · ${it.brand} ${it.model}" }, { vehicleId = it.toInt() })
+        Text("Cliente: ${state.options.customers.find { it.id == vehicle?.customerId }?.fullName ?: "Seleccione un vehículo con cliente"}")
+        OperationChoice("Mecánico principal", mechanicId.toString(), state.mechanics.filter { it.isAvailable }.map { it.id.toString() to "${it.fullName} · ${it.specialty}" }, { mechanicId = it.toInt() })
+        OutlinedTextField(description, { description = it }, label = { Text("Descripción") })
+        OutlinedTextField(date, { date = it }, label = { Text("Fecha estimada (AAAA-MM-DD)") }, isError = date.isNotEmpty() && dateError != null)
+        if (state.options.vehicles.isEmpty() || state.mechanics.isEmpty()) Text("Registre primero clientes, vehículos y mecánicos desde sus módulos.")
+    }
 }
 
 @Composable
-private fun taskStatusLabel(status: TaskStatus): String = when (status) {
-    TaskStatus.PENDING -> stringResource(R.string.status_pending)
-    TaskStatus.IN_PROGRESS -> stringResource(R.string.status_in_progress)
-    TaskStatus.COMPLETED -> stringResource(R.string.status_completed)
-    TaskStatus.DELIVERED -> stringResource(R.string.status_delivered)
-    TaskStatus.CANCELLED -> stringResource(R.string.status_cancelled)
-    TaskStatus.UNKNOWN -> stringResource(R.string.status_unknown)
+private fun OrderDetailDialog(order: WorkshopWorkOrder, state: WorkshopUiState, onClose: () -> Unit, onSave: (WorkshopWorkOrder, String?) -> Unit) {
+    var date by remember(order.estimatedDate) { mutableStateOf(order.estimatedDate) }
+    var reason by remember(order.estimatedDate) { mutableStateOf("") }
+    var checks by remember(order.checklist) { mutableStateOf(order.checklist) }
+    val dateError = validateEstimatedDate(order.estimatedDate, date, reason)
+    OperationDialog("Orden ${order.trackingCode}", state.isSubmitting, state.errorMessage,
+        !order.closed && dateError == null, onClose,
+        { onSave(order.copy(estimatedDate = date, checklist = checks), reason) }) {
+        Text("${order.description} · ${order.status.toApiValue()}")
+        Text("Total oficial: S/ ${"%.2f".format(order.calculatedTotal)}")
+        OutlinedTextField(date, { date = it }, label = { Text("Fecha estimada (AAAA-MM-DD)") }, enabled = !order.closed)
+        if (date != order.estimatedDate) {
+            OutlinedTextField(reason, { reason = it }, label = { Text("Motivo de la demora") }, enabled = !order.closed)
+            dateError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
+        Text("Control de calidad", style = MaterialTheme.typography.titleMedium)
+        listOf(
+            Triple("Tareas completadas", checks.tasksCompleted, { value: Boolean -> checks = checks.copy(tasksCompleted = value) }),
+            Triple("Repuestos verificados", checks.sparePartsChecked, { value: Boolean -> checks = checks.copy(sparePartsChecked = value) }),
+            Triple("Diagnóstico validado", checks.diagnosisValidated, { value: Boolean -> checks = checks.copy(diagnosisValidated = value) }),
+            Triple("Limpieza realizada", checks.cleaningDone, { value: Boolean -> checks = checks.copy(cleaningDone = value) }),
+            Triple("Prueba final", checks.finalTestDone, { value: Boolean -> checks = checks.copy(finalTestDone = value) })
+        ).forEach { (label, checked, change) ->
+            Row { Checkbox(checked, change, enabled = !order.closed && !state.isSubmitting); Text(label, Modifier.padding(top = 12.dp)) }
+        }
+        if (!order.closed) {
+            Text("Para finalizar: todas las tareas completadas y aprobadas, y los cinco controles de calidad.")
+            Button(onClick = { onSave(order.copy(status = TaskStatus.FINISHED, checklist = checks, estimatedDate = date), reason) },
+                enabled = order.canFinish(checks) && dateError == null && !state.isSubmitting) { Text("Finalizar orden") }
+        }
+        if (order.status == TaskStatus.FINISHED) Button(onClick = { onSave(order.copy(status = TaskStatus.DELIVERED), null) }, enabled = !state.isSubmitting) { Text("Entregar vehículo") }
+    }
+}
+
+@Composable
+internal fun MaterialSelection(items: List<InventoryItem>, selected: List<TaskMaterialInput>, onChange: (List<TaskMaterialInput>) -> Unit) {
+    var itemId by remember { mutableStateOf(0) }
+    var quantity by remember { mutableStateOf("1") }
+    Text("Repuestos (se fijan al crear la tarea)", style = MaterialTheme.typography.titleSmall)
+    selected.forEach { part ->
+        Text("${part.quantity} × ${items.find { it.id == part.inventoryItemId }?.name ?: part.inventoryItemId}")
+        TextButton(onClick = { onChange(selected.filterNot { it.inventoryItemId == part.inventoryItemId }) }) { Text("Quitar") }
+    }
+    OperationChoice("Repuesto", itemId.toString(), items.filter { candidate -> selected.none { it.inventoryItemId == candidate.id } }.map { it.id.toString() to "${it.name} · ${it.brand} · ${it.qualityTier} · stock ${it.stock}" }, { itemId = it.toInt() })
+    OutlinedTextField(quantity, { quantity = it }, label = { Text("Cantidad") })
+    TextButton(onClick = { onChange(selected + TaskMaterialInput(itemId, quantity.toInt())); itemId = 0; quantity = "1" },
+        enabled = items.any { it.id == itemId } && selected.none { it.inventoryItemId == itemId } && (quantity.toIntOrNull() ?: 0) > 0) { Text("Agregar repuesto") }
+    Text("El servidor valida y descuenta existencias al iniciar una tarea aprobada.")
+}
+
+@Composable
+private fun TaskFormDialog(state: WorkshopUiState, task: WorkshopTask?, onClose: () -> Unit, onCreate: (CreateTaskInput) -> Unit, onUpdate: (UpdateTaskInput) -> Unit) {
+    var description by remember { mutableStateOf(task?.description.orEmpty()) }
+    var orderId by remember { mutableStateOf(task?.orderId ?: 0) }
+    var mechanicId by remember { mutableStateOf(task?.mechanicId ?: 0) }
+    var priority by remember { mutableStateOf(task?.priority ?: "MEDIUM") }
+    var minutes by remember { mutableStateOf(task?.estimatedMinutes?.toString() ?: "60") }
+    var price by remember { mutableStateOf(task?.laborPrice?.toString() ?: "0") }
+    var cost by remember { mutableStateOf(task?.laborCost?.toString() ?: "0") }
+    var parts by remember { mutableStateOf(emptyList<TaskMaterialInput>()) }
+    val valid = state.workOrders.any { it.id == orderId && !it.closed } && description.isNotBlank() &&
+        (minutes.toIntOrNull() ?: 0) > 0 && price.toBigDecimalOrNull()?.signum()?.let { it >= 0 } == true && cost.toBigDecimalOrNull()?.signum()?.let { it >= 0 } == true
+    OperationDialog(if (task == null) "Nueva tarea" else "Editar / aprobar cotización", state.isSubmitting || state.optionsLoading,
+        state.errorMessage, valid, onClose, {
+            if (task == null) onCreate(CreateTaskInput(orderId, description.trim(), priority, minutes.toInt(), price.toDouble(), mechanicId.takeIf { it > 0 }, cost.toDouble(), parts))
+            else onUpdate(UpdateTaskInput(task.id, description.trim(), priority, minutes.toInt(), price.toDouble(), mechanicId.takeIf { it > 0 }, task.status, cost.toDouble(), if (task.status == TaskStatus.PENDING) "APPROVED" else task.adminReviewStatus))
+        }) {
+        if (task == null) OperationChoice("Orden", orderId.toString(), state.workOrders.filterNot { it.closed }.map { it.id.toString() to it.trackingCode }, { orderId = it.toInt() })
+        OutlinedTextField(description, { description = it }, label = { Text("Descripción de tarea") })
+        OperationChoice("Prioridad", priority, listOf("LOW", "MEDIUM", "HIGH").map { it to it }, { priority = it })
+        OutlinedTextField(minutes, { minutes = it }, label = { Text("Duración estimada (minutos)") })
+        OutlinedTextField(price, { price = it }, label = { Text("Precio de mano de obra (S/)") })
+        OutlinedTextField(cost, { cost = it }, label = { Text("Costo interno de mano de obra (S/)") })
+        OperationChoice("Mecánico", mechanicId.toString(), listOf("0" to "Sin asignar") + state.mechanics.filter { it.isAvailable || it.id == mechanicId }.map { it.id.toString() to it.fullName }, { mechanicId = it.toInt() })
+        if (task == null) MaterialSelection(state.options.inventory, parts, { parts = it })
+        else {
+            Text("Los repuestos iniciales se conservan al editar.")
+            task.parts.forEach { Text("${it.quantity} × ${it.name}") }
+        }
+    }
 }

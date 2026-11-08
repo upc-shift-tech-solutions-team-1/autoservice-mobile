@@ -11,7 +11,9 @@ data class FinancialSummaryDto(
     val marginPercentage: Double?,
     val profitableOrders: Int?,
     val lossOrders: Int?,
-    val averageTicket: Double?
+    val averageTicket: Double?,
+    val periodSeries: List<com.torquelab.autoservice.workshop.domain.model.FinancialPeriodPoint>? = null,
+    val orderProfitability: List<com.torquelab.autoservice.workshop.domain.model.OrderProfitability>? = null
 ) {
     fun toDomain(): FinancialSummary {
         return FinancialSummary(
@@ -23,7 +25,9 @@ data class FinancialSummaryDto(
             marginPercentage = marginPercentage ?: 0.0,
             profitableOrders = profitableOrders ?: 0,
             lossOrders = lossOrders ?: 0,
-            averageTicket = averageTicket ?: 0.0
+            averageTicket = averageTicket ?: 0.0,
+            periodSeries = periodSeries.orEmpty(),
+            orderProfitability = orderProfitability.orEmpty()
         )
     }
 }

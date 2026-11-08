@@ -27,7 +27,10 @@ data class DashboardUiState(
     val averageTicket: Double = 0.0,
     val profitableOrders: Int = 0,
     val lossOrders: Int = 0,
-    val recentOrders: List<WorkshopWorkOrder> = emptyList()
+    val recentOrders: List<WorkshopWorkOrder> = emptyList(),
+    val error: String? = null,
+    val periodSeries: List<com.torquelab.autoservice.workshop.domain.model.FinancialPeriodPoint> = emptyList(),
+    val orderProfitability: List<com.torquelab.autoservice.workshop.domain.model.OrderProfitability> = emptyList()
 )
 
 @HiltViewModel
@@ -43,7 +46,7 @@ class DashboardViewModel @Inject constructor(
 
     fun loadData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
             
             val summaryResult = repository.getFinancialSummary()
             val ordersResult = repository.getWorkOrders()
@@ -57,7 +60,7 @@ class DashboardViewModel @Inject constructor(
                 
                 val activeVehicles = activeOrders.map { it.vehicleId }.distinct().count()
                 val activeCount = activeOrders.size
-                val completedCount = nonCancelledOrders.count { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.DELIVERED }
+                val completedCount = nonCancelledOrders.count { it.status == TaskStatus.FINISHED || it.status == TaskStatus.DELIVERED }
                 
                 val recent = orders.sortedByDescending { it.id }.take(4)
 
@@ -77,12 +80,14 @@ class DashboardViewModel @Inject constructor(
                             averageTicket = summary.averageTicket,
                             profitableOrders = summary.profitableOrders,
                             lossOrders = summary.lossOrders,
-                            recentOrders = recent
+                            recentOrders = recent,
+                            periodSeries = summary.periodSeries,
+                            orderProfitability = summary.orderProfitability
                         )
                     }
                 }
             } else {
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { it.copy(isLoading = false, error = summaryResult.exceptionOrNull()?.message ?: ordersResult.exceptionOrNull()?.message ?: "No se pudo cargar el panel.") }
             }
         }
     }
