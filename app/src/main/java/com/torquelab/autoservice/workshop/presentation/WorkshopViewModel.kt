@@ -16,13 +16,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.torquelab.autoservice.workshop.domain.model.*
 
 data class WorkshopUiState(
     val isLoading: Boolean = true,
     val isSubmitting: Boolean = false,
     val workOrders: List<WorkshopWorkOrder> = emptyList(),
     val mechanics: List<Mechanic> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val options: WorkshopOptions = WorkshopOptions(),
+    val optionsLoading: Boolean = false,
+    val savedVersion: Int = 0
 )
 
 @HiltViewModel
@@ -100,6 +104,19 @@ class WorkshopViewModel @Inject constructor(
         executeMutation { repository.updateTask(input) }
     }
 
+    fun loadOptions() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(optionsLoading = true, errorMessage = null) }
+            repository.getOptions().onSuccess { options ->
+                _uiState.update { it.copy(options = options, optionsLoading = false) }
+            }.onFailure { error -> _uiState.update { it.copy(optionsLoading = false, errorMessage = error.message ?: "No se pudieron cargar las opciones.") } }
+        }
+    }
+
+    fun createOrder(input: CreateWorkOrderInput) = executeMutation { repository.createWorkOrder(input) }
+    fun updateOrder(order: WorkshopWorkOrder, reason: String?) = executeMutation { repository.updateWorkOrder(order, reason) }
+    fun createTaskWithParts(input: CreateTaskInput) = executeMutation { repository.createTask(input) }
+
     fun cancelTask(taskId: Int) {
         executeMutation { repository.cancelTask(taskId) }
     }
@@ -119,7 +136,7 @@ class WorkshopViewModel @Inject constructor(
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             action()
                 .onSuccess {
-                    _uiState.update { it.copy(isSubmitting = false) }
+                    _uiState.update { it.copy(isSubmitting = false, savedVersion = it.savedVersion + 1) }
                     load()
                 }
                 .onFailure { exception ->

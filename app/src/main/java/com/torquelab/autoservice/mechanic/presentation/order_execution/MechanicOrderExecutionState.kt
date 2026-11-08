@@ -10,5 +10,8 @@ data class MechanicOrderExecutionState(
     val inventoryItems: List<InventoryItem> = emptyList(),
     val diagnosisText: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isSubmitting: Boolean = false,
+    val actionError: String? = null,
+    val savedVersion: Int = 0
 )

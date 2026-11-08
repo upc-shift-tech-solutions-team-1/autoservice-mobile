@@ -10,4 +10,6 @@ interface StaffRepository {
     suspend fun getMechanic(id: Int): Result<Mechanic>
 
     suspend fun registerMechanic(input: CreateMechanicInput): Result<Unit>
+    suspend fun updateMechanic(mechanic: Mechanic): Result<Unit>
+    suspend fun deleteMechanic(id: Int): Result<Unit>
 }

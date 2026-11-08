@@ -15,7 +15,9 @@ data class WorkshopWorkOrder(
     val startDate: String = "",
     val estimatedDate: String = "",
     val calculatedTotal: Double = 0.0,
-    val isRisk: Boolean = false
+    val isRisk: Boolean = false,
+    val mechanicId: Int = 0,
+    val checklist: QualityChecklist = QualityChecklist()
 )
 
 data class WorkshopTask(
@@ -28,8 +30,17 @@ data class WorkshopTask(
     val materialsCost: Double,
     val status: TaskStatus,
     val mechanicId: Int?,
-    val mechanicName: String? = null
+    val mechanicName: String? = null,
+    val laborCost: Double = 0.0,
+    val adminReviewStatus: String = "",
+    val parts: List<WorkshopPart> = emptyList(),
+    val technicalDiagnosis: String = "",
+    val customerExplanation: String = "",
+    val evidenceRegistered: String = "",
+    val internalObservation: String = ""
 )
+
+data class WorkshopPart(val inventoryItemId: Int, val name: String, val quantity: Int, val unitPrice: Double)
 
 data class CreateTaskInput(
     val orderId: Int,
@@ -37,7 +48,9 @@ data class CreateTaskInput(
     val priority: String,
     val estimatedMinutes: Int,
     val laborPrice: Double,
-    val mechanicId: Int?
+    val mechanicId: Int?,
+    val laborCost: Double = 0.0,
+    val parts: List<TaskMaterialInput> = emptyList()
 )
 
 data class UpdateTaskInput(
@@ -47,5 +60,7 @@ data class UpdateTaskInput(
     val estimatedMinutes: Int,
     val laborPrice: Double,
     val mechanicId: Int?,
-    val status: TaskStatus
+    val status: TaskStatus,
+    val laborCost: Double = 0.0,
+    val adminReviewStatus: String? = null
 )

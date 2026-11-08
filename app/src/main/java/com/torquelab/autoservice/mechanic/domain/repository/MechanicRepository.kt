@@ -21,4 +21,5 @@ interface MechanicRepository {
     suspend fun startTask(taskId: Int): Result<Unit>
 
     suspend fun completeTask(taskId: Int, technicalDiagnosis: String): Result<Unit>
+    suspend fun saveTaskReport(taskId: Int, report: com.torquelab.autoservice.mechanic.domain.model.TaskReport, complete: Boolean): Result<Unit>
 }

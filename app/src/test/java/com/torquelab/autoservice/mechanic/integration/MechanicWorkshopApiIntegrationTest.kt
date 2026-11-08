@@ -222,4 +222,19 @@ class MechanicWorkshopApiIntegrationTest {
         assertEquals(120.0, order.totalLaborCost, 0.001)
         assertEquals(140.0, order.totalMaterialsCost, 0.001)
     }
+
+    @Test
+    fun `saving report patches public explanation and private observation without changing parts or approval`() = runTest {
+        mockWebServer.enqueue(MockResponse().setBody("{}"))
+        val report = com.torquelab.autoservice.mechanic.domain.model.TaskReport("Diagnóstico", "Explicación", "Solo taller", "https://example.com/foto")
+        assertTrue(repository.saveTaskReport(44,report,false).isSuccess)
+        val request = mockWebServer.takeRequest()
+        assertEquals("PATCH",request.method)
+        assertEquals("/tasks/44",request.path)
+        val body = gson.fromJson(request.body.readUtf8(),JsonObject::class.java)
+        assertEquals("Explicación",body["customerExplanation"].asString)
+        assertEquals("Solo taller",body["internalObservation"].asString)
+        assertEquals("https://example.com/foto",body["evidenceRegistered"].asString)
+        assertTrue(!body.has("status") && !body.has("parts") && !body.has("adminReviewStatus"))
+    }
 }

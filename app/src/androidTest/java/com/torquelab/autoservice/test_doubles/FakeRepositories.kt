@@ -16,6 +16,15 @@ import com.torquelab.autoservice.workshop.domain.repository.WorkshopRepository
  * In-memory test double for MechanicRepository used in BDD and Android instrumentation tests.
  */
 class FakeMechanicRepository : MechanicRepository {
+    override suspend fun saveTaskReport(taskId: Int, report: com.torquelab.autoservice.mechanic.domain.model.TaskReport, complete: Boolean): Result<Unit> {
+        report.validationError()?.let { return Result.failure(IllegalArgumentException(it)) }
+        val index = tasks.indexOfFirst { it.id == taskId }
+        if (index < 0) return Result.failure(NoSuchElementException())
+        tasks[index] = tasks[index].copy(technicalDiagnosis = report.technicalDiagnosis, customerExplanation = report.customerExplanation,
+            internalObservation = report.internalObservation, evidenceRegistered = report.evidenceRegistered,
+            status = if (complete) TaskStatus.COMPLETED else tasks[index].status)
+        return Result.success(Unit)
+    }
     val orders = mutableListOf<MechanicOrder>()
     val tasks = mutableListOf<MechanicTask>()
     val inventory = mutableListOf<InventoryItem>()
@@ -67,6 +76,17 @@ class FakeMechanicRepository : MechanicRepository {
  * In-memory test double for WorkshopRepository used in BDD and Android instrumentation tests.
  */
 class FakeWorkshopRepository : WorkshopRepository {
+    override suspend fun getOptions() = Result.success(com.torquelab.autoservice.workshop.domain.model.WorkshopOptions())
+    override suspend fun createWorkOrder(input: com.torquelab.autoservice.workshop.domain.model.CreateWorkOrderInput): Result<Unit> {
+        workOrders.add(WorkshopWorkOrder(workOrders.size + 1, input.vehicleId, input.customerId, "TEST-ORDER", input.description, TaskStatus.PENDING, estimatedDate = input.estimatedDate, mechanicId = input.mechanicId))
+        return Result.success(Unit)
+    }
+    override suspend fun updateWorkOrder(order: WorkshopWorkOrder, delayReason: String?): Result<Unit> {
+        val index = workOrders.indexOfFirst { it.id == order.id }
+        if (index < 0) return Result.failure(NoSuchElementException())
+        workOrders[index] = order
+        return Result.success(Unit)
+    }
     val workOrders = mutableListOf<WorkshopWorkOrder>()
     var financialSummary = FinancialSummary(
         projectedRevenue = 25000.0,

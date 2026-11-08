@@ -24,6 +24,7 @@ data class VehicleRequest(
 data class UpdateKilometersRequest(val kilometers: Int)
 
 interface FleetApi {
+    @DELETE("vehicles/{id}") suspend fun delete(@Path("id") id: Int)
     @GET("vehicles") suspend fun vehicles(): List<Vehicle>
     @GET("customers") suspend fun owners(): List<VehicleOwner>
     @POST("vehicles") suspend fun create(@Body body: VehicleRequest): Vehicle
@@ -35,6 +36,7 @@ class RemoteFleetRepository @Inject constructor(retrofit: Retrofit) : FleetRepos
     private val api = retrofit.create(FleetApi::class.java)
     override suspend fun vehicles() = api.vehicles()
     override suspend fun owners() = api.owners()
+    suspend fun delete(id: Int) = api.delete(id)
     override suspend fun save(vehicle: Vehicle): Vehicle {
         val body = VehicleRequest(
             plate = vehicle.plate.trim().uppercase(),
