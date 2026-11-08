@@ -17,7 +17,7 @@ fun TaskDto.toMechanicTask(): MechanicTask {
         materialsCost = materialsCost ?: 0.0,
         technicalDiagnosis = technicalDiagnosis ?: "",
         adminReviewStatus = adminReviewStatus ?: "",
-        parts = parts?.map { 
+        parts = parts?.map {
             MechanicTaskPart(
                 inventoryItemId = it.inventoryItemId,
                 name = it.name,
@@ -26,7 +26,11 @@ fun TaskDto.toMechanicTask(): MechanicTask {
                 purchasePrice = it.purchasePrice,
                 brand = it.brand ?: "",
                 qualityTier = it.qualityTier ?: ""
-            ) 
-        } ?: emptyList()
+            )
+        } ?: emptyList(),
+        customerExplanation = customerExplanation.orEmpty(),
+        internalObservation = internalObservation.orEmpty(),
+        evidenceRegistered = evidenceRegistered.orEmpty(),
+        mechanicId = mechanicId
     )
 }
