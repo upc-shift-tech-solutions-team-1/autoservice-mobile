@@ -19,6 +19,13 @@ import com.torquelab.autoservice.workshop.domain.model.WorkshopWorkOrder
 import com.torquelab.autoservice.workshop.domain.repository.WorkshopRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.torquelab.autoservice.shared.network.apiResult
+import com.torquelab.autoservice.workshop.domain.model.*
+import com.torquelab.autoservice.workshop.data.remote.dto.CreateTaskPartRequest
+import com.torquelab.autoservice.workshop.data.remote.dto.CreateWorkOrderRequest
+import com.torquelab.autoservice.workshop.data.remote.dto.UpdateWorkOrderRequest
+import com.torquelab.autoservice.inventory.data.InventoryApi
+import java.time.LocalDate
 
 @Singleton
 class WorkshopRepositoryImpl @Inject constructor(
@@ -26,21 +33,49 @@ class WorkshopRepositoryImpl @Inject constructor(
     private val taskApi: TaskApi,
     private val customerApi: CustomerApi,
     private val fleetApi: FleetApi,
-    private val staffApi: StaffApi
+    private val staffApi: StaffApi,
+    private val inventoryApi: InventoryApi
 ) : WorkshopRepository {
 
-    override suspend fun getWorkOrders(): Result<List<WorkshopWorkOrder>> = runCatching {
+    override suspend fun getOptions(): Result<WorkshopOptions> = apiResult {
+        WorkshopOptions(fleetApi.vehicles(), fleetApi.owners(), inventoryApi.items())
+    }
+
+    override suspend fun createWorkOrder(input: CreateWorkOrderInput): Result<Unit> = apiResult {
+        require(input.vehicleId > 0 && input.customerId > 0 && input.mechanicId > 0) { "Seleccione vehículo y mecánico." }
+        require(input.description.isNotBlank()) { "Ingrese una descripción." }
+        validateEstimatedDate(null, input.estimatedDate, null)?.let { error(it) }
+        workshopApi.createWorkOrder(CreateWorkOrderRequest(input.vehicleId, input.customerId, input.mechanicId, input.description.trim(), input.estimatedDate))
+        Unit
+    }
+
+    override suspend fun updateWorkOrder(order: WorkshopWorkOrder, delayReason: String?): Result<Unit> = apiResult {
+        // Read the current server price; a date/checklist edit must not replace it with a stale UI total.
+        val current = workshopApi.getWorkOrder(order.id)
+        validateEstimatedDate(current.estimatedDate, order.estimatedDate, delayReason)?.let { error(it) }
+        val checks = order.checklist
+        workshopApi.updateWorkOrder(order.id, UpdateWorkOrderRequest(
+            order.description.trim(), order.estimatedDate, current.price, order.status.toApiValue(),
+            checks.tasksCompleted, checks.sparePartsChecked, checks.diagnosisValidated,
+            checks.cleaningDone, checks.finalTestDone, delayReason?.trim()?.takeIf(String::isNotEmpty)
+        ))
+        Unit
+    }
+
+    override suspend fun getWorkOrders(): Result<List<WorkshopWorkOrder>> = apiResult {
         val customers = customerApi.getCustomers()
         val vehicles = fleetApi.vehicles()
         val mechanics = staffApi.getMechanics()
         val allTasks = taskApi.getTasks()
-        
+
         workshopApi.getWorkOrders().map { order ->
             val customer = customers.find { it.id == order.customerId.toString() }
             val vehicle = vehicles.find { it.id == order.vehicleId }
             val tasks = allTasks.filter { it.workOrderId == order.id }.map { it.toDomain(mechanics) }
-            
-            val isRisk = order.status == "PENDING" && order.estimatedDate.isNotEmpty()
+
+            val isRisk = order.status == "PENDING" && runCatching {
+                !LocalDate.parse(order.estimatedDate.take(10)).isAfter(LocalDate.now().plusDays(3))
+            }.getOrDefault(false)
 
             WorkshopWorkOrder(
                 id = order.id,
@@ -57,16 +92,18 @@ class WorkshopRepositoryImpl @Inject constructor(
                 startDate = order.startDate,
                 estimatedDate = order.estimatedDate,
                 calculatedTotal = order.price,
-                isRisk = isRisk
+                isRisk = isRisk,
+                mechanicId = order.mechanicId,
+                checklist = QualityChecklist(order.tasksCompleted, order.sparePartsChecked, order.diagnosisValidated, order.cleaningDone, order.finalTestDone)
             )
         }
     }
 
-    override suspend fun getFinancialSummary(): Result<com.torquelab.autoservice.workshop.domain.model.FinancialSummary> = runCatching {
+    override suspend fun getFinancialSummary(): Result<com.torquelab.autoservice.workshop.domain.model.FinancialSummary> = apiResult {
         workshopApi.getFinancialSummary().toDomain()
     }
 
-    override suspend fun createTask(input: CreateTaskInput): Result<Unit> = runCatching {
+    override suspend fun createTask(input: CreateTaskInput): Result<Unit> = apiResult {
         taskApi.createTask(
             CreateTaskRequest(
                 workOrderId = input.orderId,
@@ -74,13 +111,16 @@ class WorkshopRepositoryImpl @Inject constructor(
                 description = input.description,
                 priority = input.priority,
                 estimatedTime = input.estimatedMinutes,
-                laborPrice = input.laborPrice
+                laborPrice = input.laborPrice,
+                laborCost = input.laborCost,
+                parts = input.parts.map { CreateTaskPartRequest(it.inventoryItemId, it.quantity) },
+                adminReviewStatus = "APPROVED"
             )
         )
         Unit
     }
 
-    override suspend fun updateTask(input: UpdateTaskInput): Result<Unit> = runCatching {
+    override suspend fun updateTask(input: UpdateTaskInput): Result<Unit> = apiResult {
         taskApi.updateTask(
             id = input.taskId,
             request = UpdateTaskRequest(
@@ -89,13 +129,15 @@ class WorkshopRepositoryImpl @Inject constructor(
                 priority = input.priority,
                 estimatedTime = input.estimatedMinutes,
                 laborPrice = input.laborPrice,
-                mechanicId = input.mechanicId
+                mechanicId = input.mechanicId,
+                laborCost = input.laborCost,
+                adminReviewStatus = input.adminReviewStatus
             )
         )
         Unit
     }
 
-    override suspend fun cancelTask(taskId: Int): Result<Unit> = runCatching {
+    override suspend fun cancelTask(taskId: Int): Result<Unit> = apiResult {
         taskApi.deleteTask(taskId)
         Unit
     }
@@ -103,7 +145,7 @@ class WorkshopRepositoryImpl @Inject constructor(
     override suspend fun updateTaskStatus(
         taskId: Int,
         status: TaskStatus
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = apiResult {
         taskApi.patchTask(
             id = taskId,
             request = PatchTaskRequest(status = status.toApiValue())
@@ -125,7 +167,14 @@ class WorkshopRepositoryImpl @Inject constructor(
             materialsCost = materialsCost ?: 0.0,
             status = TaskStatus.fromApi(status),
             mechanicId = mechanicId,
-            mechanicName = mechanicName
+            mechanicName = mechanicName,
+            laborCost = laborCost,
+            adminReviewStatus = adminReviewStatus.orEmpty(),
+            parts = parts.orEmpty().map { WorkshopPart(it.inventoryItemId, it.name, it.quantity, it.unitPrice) },
+            technicalDiagnosis = technicalDiagnosis.orEmpty(),
+            customerExplanation = customerExplanation.orEmpty(),
+            evidenceRegistered = evidenceRegistered.orEmpty(),
+            internalObservation = internalObservation.orEmpty()
         )
     }
 

@@ -49,14 +49,16 @@ fun DashboardRoute(
 
     DashboardScreen(
         uiState = uiState,
-        onCustomersClick = onCustomersClick
+        onCustomersClick = onCustomersClick,
+        onRetry = viewModel::loadData
     )
 }
 
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
-    onCustomersClick: () -> Unit
+    onCustomersClick: () -> Unit,
+    onRetry: () -> Unit = {}
 ) {
     if (uiState.isLoading) {
         AutoServiceLoadingState()
@@ -71,6 +73,8 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         item {
+            uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            TextButton(onClick = onRetry) { Text("Actualizar panel") }
             DashboardHeader(uiState.workshopName)
         }
 
@@ -89,6 +93,12 @@ fun DashboardScreen(
             FinancialGrid(uiState)
         }
 
+        if (uiState.orderProfitability.isNotEmpty()) item {
+            Text("Rentabilidad por orden", style = MaterialTheme.typography.titleMedium)
+            uiState.orderProfitability.forEach { order ->
+                Text("${order.trackingCode}: S/ ${"%.2f".format(order.profit)} (${"%.2f".format(order.marginPercentage)}%)")
+            }
+        }
         item {
             Text(
                 text = "Acciones Rápidas",
@@ -448,7 +458,7 @@ fun RecentOrderCard(order: WorkshopWorkOrder) {
                     fontSize = 12.sp
                 )
             }
-            
+
             val (statusBg, statusText) = when (order.status) {
                 TaskStatus.PENDING -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
                 TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer

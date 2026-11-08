@@ -24,7 +24,12 @@ abstract class TrackingModule {
     companion object {
         @Provides
         @Singleton
-        fun provideTrackingApi(retrofit: Retrofit): TrackingApi =
-            retrofit.create(TrackingApi::class.java)
+        fun provideTrackingApi(retrofit: Retrofit, client: okhttp3.OkHttpClient): TrackingApi {
+            // Public tracking must not send a saved token or trigger an authenticated 401 logout.
+            val anonymousClient = client.newBuilder().apply {
+                interceptors().removeAll { it is com.torquelab.autoservice.shared.network.AuthInterceptor }
+            }.build()
+            return retrofit.newBuilder().client(anonymousClient).build().create(TrackingApi::class.java)
+        }
     }
 }
