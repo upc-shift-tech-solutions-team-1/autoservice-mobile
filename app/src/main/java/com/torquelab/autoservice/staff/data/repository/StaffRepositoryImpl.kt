@@ -10,6 +10,8 @@ import com.torquelab.autoservice.workshop.data.remote.TaskApi
 import com.torquelab.autoservice.workshop.domain.model.TaskStatus
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.torquelab.autoservice.staff.data.remote.dto.UpdateMechanicRequest
+import com.torquelab.autoservice.shared.network.apiResult
 
 @Singleton
 class StaffRepositoryImpl @Inject constructor(
@@ -17,7 +19,14 @@ class StaffRepositoryImpl @Inject constructor(
     private val taskApi: TaskApi
 ) : StaffRepository {
 
-    override suspend fun getMechanics(): Result<List<Mechanic>> = runCatching {
+    override suspend fun updateMechanic(mechanic: Mechanic): Result<Unit> = apiResult {
+        require(mechanic.fullName.isNotBlank() && mechanic.specialty.isNotBlank() && mechanic.maxCapacity > 0) { "Revise nombre, especialidad y capacidad." }
+        staffApi.updateMechanic(mechanic.id, UpdateMechanicRequest(mechanic.fullName.trim(), mechanic.specialty.trim(), mechanic.maxCapacity, mechanic.email.trim()))
+        Unit
+    }
+    override suspend fun deleteMechanic(id: Int): Result<Unit> = apiResult { staffApi.deleteMechanic(id) }
+
+    override suspend fun getMechanics(): Result<List<Mechanic>> = apiResult {
         staffApi.getMechanics().map { mechanic ->
             mechanic.toDomain(
                 assignedTasks = activeTaskCount(mechanic.id)
@@ -25,12 +34,12 @@ class StaffRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getMechanic(id: Int): Result<Mechanic> = runCatching {
+    override suspend fun getMechanic(id: Int): Result<Mechanic> = apiResult {
         val mechanic = staffApi.getMechanic(id)
         mechanic.toDomain(activeTaskCount(mechanic.id))
     }
 
-    override suspend fun registerMechanic(input: CreateMechanicInput): Result<Unit> = runCatching {
+    override suspend fun registerMechanic(input: CreateMechanicInput): Result<Unit> = apiResult {
         staffApi.createMechanic(
             CreateMechanicRequest(
                 fullName = input.fullName,

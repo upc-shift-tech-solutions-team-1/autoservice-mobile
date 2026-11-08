@@ -3,16 +3,29 @@ package com.torquelab.autoservice.customer_trust.data.remote.dto
 import com.torquelab.autoservice.customer_trust.domain.model.TrackingPart
 import com.torquelab.autoservice.customer_trust.domain.model.TrackingTask
 import com.torquelab.autoservice.customer_trust.domain.model.TrackingTaskStatus
+import com.torquelab.autoservice.customer_trust.domain.model.TrackingCosts
+import com.torquelab.autoservice.customer_trust.domain.model.TrackingStage
+import com.torquelab.autoservice.customer_trust.domain.model.TrackingDateChange
+import com.torquelab.autoservice.customer_trust.domain.model.TrackingMechanic
+
+data class TrackingSummaryDto(
+    val trackingCode: String,
+    val status: String,
+    val progressPercentage: Double,
+    val estimatedDate: String?,
+    val tasks: List<TrackingTaskDto>?,
+    val costs: TrackingCosts,
+    val history: List<TrackingStage>?,
+    val estimatedDateHistory: List<TrackingDateChange>?,
+    val primaryMechanic: TrackingMechanic?
+)
 
 data class TrackingOrderDto(
-    val id: Int,
     val trackingCode: String?,
     val workshopId: String?,
     val vehicleId: Int,
     val customerId: Int,
-    val description: String?,
     val status: String?,
-    val price: Double?,
     val estimatedDate: String?
 )
 
@@ -31,7 +44,6 @@ data class TrackingWorkshopDto(
 )
 
 data class TrackingTaskDto(
-    val id: Int,
     val description: String?,
     val status: String?,
     val technicalDiagnosis: String?,
@@ -41,7 +53,7 @@ data class TrackingTaskDto(
     val parts: List<TrackingPartDto>?
 ) {
     fun toDomain() = TrackingTask(
-        id = id,
+        id = 0,
         description = description.orEmpty(),
         status = TrackingTaskStatus.fromApi(status),
         technicalDiagnosis = technicalDiagnosis,

@@ -45,7 +45,8 @@ data class TaskDto(
     val internalObservation: String? = null,
     val evidenceRegistered: String? = null,
     val adminReviewStatus: String? = null,
-    val parts: List<TaskPartDto>? = null
+    val parts: List<TaskPartDto>? = null,
+    val laborCost: Double = 0.0
 )
 
 data class CreateTaskPartRequest(
@@ -62,7 +63,8 @@ data class CreateTaskRequest(
     val laborPrice: Double,
     val parts: List<CreateTaskPartRequest>? = null,
     val technicalDiagnosis: String? = null,
-    val adminReviewStatus: String? = null
+    val adminReviewStatus: String? = null,
+    val laborCost: Double = 0.0
 )
 
 data class UpdateTaskRequest(
@@ -71,7 +73,9 @@ data class UpdateTaskRequest(
     val priority: String,
     val estimatedTime: Int,
     val laborPrice: Double,
-    val mechanicId: Int?
+    val mechanicId: Int?,
+    val laborCost: Double = 0.0,
+    val adminReviewStatus: String? = null
 )
 
 data class PatchTaskRequest(
@@ -81,4 +85,14 @@ data class PatchTaskRequest(
     val internalObservation: String? = null,
     val evidenceRegistered: String? = null,
     val adminReviewStatus: String? = null
+)
+
+data class CreateWorkOrderRequest(
+    val vehicleId: Int, val customerId: Int, val mechanicId: Int,
+    val description: String, val estimatedDate: String
+)
+data class UpdateWorkOrderRequest(
+    val description: String, val estimatedDate: String, val price: Double, val status: String,
+    val tasksCompleted: Boolean, val sparePartsChecked: Boolean, val diagnosisValidated: Boolean,
+    val cleaningDone: Boolean, val finalTestDone: Boolean, val delayReason: String? = null
 )

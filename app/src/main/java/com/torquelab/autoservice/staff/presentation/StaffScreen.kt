@@ -1,5 +1,9 @@
 package com.torquelab.autoservice.staff.presentation
 
+import com.torquelab.autoservice.shared.ui.components.OperationDialog
+import com.torquelab.autoservice.shared.ui.components.OperationChoice
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,7 +45,8 @@ fun StaffRoute(viewModel: StaffViewModel = hiltViewModel()) {
     StaffScreen(
         uiState = uiState,
         onRetry = viewModel::load,
-        onRegister = viewModel::registerMechanic
+        onRegister = viewModel::registerMechanic,
+        onUpdate = viewModel::updateMechanic, onDelete = viewModel::deleteMechanic
     )
 }
 
@@ -49,10 +54,14 @@ fun StaffRoute(viewModel: StaffViewModel = hiltViewModel()) {
 fun StaffScreen(
     uiState: StaffUiState,
     onRetry: () -> Unit,
-    onRegister: (CreateMechanicInput) -> Unit
+    onRegister: (CreateMechanicInput) -> Unit,
+    onUpdate: (Mechanic) -> Unit = {}, onDelete: (Int) -> Unit = {}
 ) {
     var showRegisterDialog by remember { mutableStateOf(false) }
     var selectedMechanic by remember { mutableStateOf<Mechanic?>(null) }
+    var editingMechanic by remember { mutableStateOf<Mechanic?>(null) }
+    var deletingMechanic by remember { mutableStateOf<Mechanic?>(null) }
+    LaunchedEffect(uiState.savedVersion) { showRegisterDialog = false; selectedMechanic = null; editingMechanic = null; deletingMechanic = null }
 
     when {
         uiState.isLoading -> AutoServiceLoadingState()
@@ -97,10 +106,13 @@ fun StaffScreen(
                     verticalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Medium)
                 ) {
                     items(uiState.mechanics, key = { it.id }) { mechanic ->
-                        MechanicCard(
-                            mechanic = mechanic,
-                            onClick = { selectedMechanic = mechanic }
-                        )
+                        Column {
+                            MechanicCard(mechanic = mechanic, onClick = { selectedMechanic = mechanic })
+                            Row {
+                                TextButton(onClick = { editingMechanic = mechanic }) { Text("Editar") }
+                                TextButton(onClick = { deletingMechanic = mechanic }) { Text("Eliminar") }
+                            }
+                        }
                     }
                 }
             }
@@ -110,14 +122,34 @@ fun StaffScreen(
     if (showRegisterDialog) {
         RegisterMechanicDialog(
             isSubmitting = uiState.isSubmitting,
+            error = uiState.errorMessage,
             onDismiss = { showRegisterDialog = false },
             onRegister = { input ->
-                showRegisterDialog = false
                 onRegister(input)
             }
         )
     }
 
+    editingMechanic?.let { mechanic ->
+        var name by remember(mechanic.id) { mutableStateOf(mechanic.fullName) }
+        var email by remember(mechanic.id) { mutableStateOf(mechanic.email) }
+        var specialty by remember(mechanic.id) { mutableStateOf(mechanic.specialty) }
+        var capacity by remember(mechanic.id) { mutableStateOf(mechanic.maxCapacity.toString()) }
+        OperationDialog("Editar mecánico", uiState.isSubmitting, uiState.errorMessage,
+            name.isNotBlank() && email.contains('@') && specialty.isNotBlank() && (capacity.toIntOrNull() ?: 0) > 0,
+            { editingMechanic = null }, { onUpdate(mechanic.copy(fullName = name.trim(), email = email.trim(), specialty = specialty.trim(), maxCapacity = capacity.toInt())) }) {
+            OutlinedTextField(name, { name = it }, label = { Text("Nombre") })
+            OutlinedTextField(email, { email = it }, label = { Text("Correo") })
+            SpecialtySelector(specialty, { specialty = it }, enabled = !uiState.isSubmitting)
+            OutlinedTextField(capacity, { capacity = it }, label = { Text("Capacidad de tareas") })
+        }
+    }
+    deletingMechanic?.let { mechanic ->
+        OperationDialog("Eliminar mecánico", uiState.isSubmitting, uiState.errorMessage, true,
+            { deletingMechanic = null }, { onDelete(mechanic.id) }, "Eliminar") {
+            Text("¿Eliminar a ${mechanic.fullName}? El servidor verificará sus asignaciones.")
+        }
+    }
     selectedMechanic?.let { mechanic ->
         MechanicDetailDialog(
             mechanic = mechanic,
@@ -151,7 +183,8 @@ private fun MechanicCard(mechanic: Mechanic, onClick: () -> Unit) {
 private fun RegisterMechanicDialog(
     isSubmitting: Boolean,
     onDismiss: () -> Unit,
-    onRegister: (CreateMechanicInput) -> Unit
+    onRegister: (CreateMechanicInput) -> Unit,
+    error: String? = null
 ) {
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -171,7 +204,11 @@ private fun RegisterMechanicDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.staff_add_mechanic)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Small)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(AutoServiceSpacing.Small)
+            ) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(
                     value = fullName,
                     onValueChange = { fullName = it },
@@ -186,13 +223,7 @@ private fun RegisterMechanicDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = specialty,
-                    onValueChange = { specialty = it },
-                    label = { Text(stringResource(R.string.staff_specialty)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                SpecialtySelector(specialty, { specialty = it }, enabled = !isSubmitting)
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -236,6 +267,25 @@ private fun RegisterMechanicDialog(
                 Text(stringResource(R.string.common_cancel))
             }
         }
+    )
+}
+
+@Composable
+private fun SpecialtySelector(value: String, onChange: (String) -> Unit, enabled: Boolean) {
+    val specialties = listOf(
+        stringResource(R.string.staff_specialty_general),
+        stringResource(R.string.staff_specialty_electrical),
+        stringResource(R.string.staff_specialty_brakes),
+        stringResource(R.string.staff_specialty_tires)
+    )
+    // Existing free-text values remain selectable when editing; never replace them silently.
+    val choices = if (value.isNotBlank() && value !in specialties) specialties + value else specialties
+    OperationChoice(
+        label = stringResource(R.string.staff_specialty),
+        value = value,
+        choices = choices.map { it to it },
+        onChange = onChange,
+        enabled = enabled
     )
 }
 

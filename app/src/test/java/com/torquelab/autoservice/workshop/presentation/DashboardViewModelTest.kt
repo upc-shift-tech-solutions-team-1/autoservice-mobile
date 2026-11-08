@@ -52,7 +52,7 @@ class DashboardViewModelTest {
         val orders = listOf(
             WorkshopWorkOrder(id = 1, vehicleId = 10, customerId = 1, trackingCode = "T1", description = "Order 1", status = TaskStatus.IN_PROGRESS),
             WorkshopWorkOrder(id = 2, vehicleId = 10, customerId = 1, trackingCode = "T2", description = "Order 2", status = TaskStatus.PENDING), // Same vehicle
-            WorkshopWorkOrder(id = 3, vehicleId = 20, customerId = 2, trackingCode = "T3", description = "Order 3", status = TaskStatus.COMPLETED),
+            WorkshopWorkOrder(id = 3, vehicleId = 20, customerId = 2, trackingCode = "T3", description = "Order 3", status = TaskStatus.FINISHED),
             WorkshopWorkOrder(id = 4, vehicleId = 30, customerId = 3, trackingCode = "T4", description = "Order 4", status = TaskStatus.DELIVERED),
             WorkshopWorkOrder(id = 5, vehicleId = 40, customerId = 4, trackingCode = "T5", description = "Order 5", status = TaskStatus.CANCELLED),
             WorkshopWorkOrder(id = 6, vehicleId = 50, customerId = 5, trackingCode = "T6", description = "Order 6", status = TaskStatus.IN_PROGRESS)
@@ -72,7 +72,7 @@ class DashboardViewModelTest {
         // Distinct active vehicles: vehicleId 10 and vehicleId 50 -> total 2
         assertEquals(2, state.activeVehicles)
 
-        // Completed/delivered: id=3 (COMPLETED) and id=4 (DELIVERED) -> total 2
+        // Completed/delivered: id=3 (FINISHED) and id=4 (DELIVERED) -> total 2
         assertEquals(2, state.completedOrders)
 
         // Financial summary metrics
@@ -104,5 +104,6 @@ class DashboardViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertEquals(0, state.activeWorkOrders)
+        assertEquals("Error en servidor", state.error)
     }
 }

@@ -27,6 +27,10 @@ fun TaskDto.toMechanicTask(): MechanicTask {
                 brand = it.brand ?: "",
                 qualityTier = it.qualityTier ?: ""
             ) 
-        } ?: emptyList()
+        } ?: emptyList(),
+        customerExplanation = customerExplanation.orEmpty(),
+        internalObservation = internalObservation.orEmpty(),
+        evidenceRegistered = evidenceRegistered.orEmpty(),
+        mechanicId = mechanicId
     )
 }
