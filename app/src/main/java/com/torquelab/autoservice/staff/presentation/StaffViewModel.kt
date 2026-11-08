@@ -17,7 +17,8 @@ data class StaffUiState(
     val isLoading: Boolean = true,
     val isSubmitting: Boolean = false,
     val mechanics: List<Mechanic> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val savedVersion: Int = 0
 )
 
 @HiltViewModel
@@ -54,13 +55,20 @@ class StaffViewModel @Inject constructor(
     }
 
     fun registerMechanic(input: CreateMechanicInput) {
+        mutate { repository.registerMechanic(input) }
+    }
+
+    fun updateMechanic(mechanic: Mechanic) = mutate { repository.updateMechanic(mechanic) }
+    fun deleteMechanic(id: Int) = mutate { repository.deleteMechanic(id) }
+
+    private fun mutate(action: suspend () -> Result<Unit>) {
         if (_uiState.value.isSubmitting) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
-            repository.registerMechanic(input)
+            action()
                 .onSuccess {
-                    _uiState.update { it.copy(isSubmitting = false) }
+                    _uiState.update { it.copy(isSubmitting = false, savedVersion = it.savedVersion + 1) }
                     load()
                 }
                 .onFailure { exception ->

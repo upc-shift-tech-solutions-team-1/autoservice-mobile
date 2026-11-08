@@ -43,7 +43,7 @@ class WorkshopRepositoryImplUnitTest {
         customerApi = mock(CustomerApi::class.java)
         fleetApi = mock(FleetApi::class.java)
         staffApi = mock(StaffApi::class.java)
-        repository = WorkshopRepositoryImpl(workshopApi, taskApi, customerApi, fleetApi, staffApi)
+        repository = WorkshopRepositoryImpl(workshopApi, taskApi, customerApi, fleetApi, staffApi, mock(com.torquelab.autoservice.inventory.data.InventoryApi::class.java))
     }
 
     @Test
@@ -205,7 +205,7 @@ class WorkshopRepositoryImplUnitTest {
                 description = "Cambio de bujías",
                 priority = "MEDIUM",
                 estimatedTime = 40,
-                laborPrice = 60.0
+                laborPrice = 60.0, parts = emptyList(), adminReviewStatus = "APPROVED"
             )
         )
     }
