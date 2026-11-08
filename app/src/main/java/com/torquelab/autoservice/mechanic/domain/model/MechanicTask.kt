@@ -13,5 +13,9 @@ data class MechanicTask(
     val materialsCost: Double,
     val technicalDiagnosis: String,
     val adminReviewStatus: String,
-    val parts: List<MechanicTaskPart>
+    val parts: List<MechanicTaskPart>,
+    val customerExplanation: String = "",
+    val internalObservation: String = "",
+    val evidenceRegistered: String = "",
+    val mechanicId: Int? = null
 )

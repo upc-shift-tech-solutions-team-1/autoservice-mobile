@@ -18,6 +18,7 @@ fun InventoryItem.toRequest() = InventoryRequest(name.trim(), category, brand.tr
 data class ReceiptResponse(val item: InventoryItem)
 
 interface InventoryApi {
+    @DELETE("inventoryitems/{id}") suspend fun delete(@Path("id") id: Int)
     @GET("inventoryitems") suspend fun items(): List<InventoryItem>
     @POST("inventoryitems") suspend fun create(@Body body: InventoryRequest): InventoryItem
     @PUT("inventoryitems/{id}") suspend fun update(@Path("id") id: Int, @Body body: InventoryRequest): InventoryItem
@@ -27,6 +28,7 @@ interface InventoryApi {
 class RemoteInventoryRepository @Inject constructor(retrofit: Retrofit) : InventoryRepository {
     private val api = retrofit.create(InventoryApi::class.java)
     override suspend fun items() = api.items()
+    suspend fun delete(id: Int) = api.delete(id)
     override suspend fun save(item: InventoryItem): InventoryItem =
         if (item.id == 0) api.create(item.toRequest()) else api.update(item.id, item.toRequest())
     override suspend fun receive(id: Int, receipt: StockReceipt) = api.receive(id, receipt).item

@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.torquelab.autoservice.mechanic.domain.model.TaskReport
+import retrofit2.HttpException
 
 @HiltViewModel
 class MechanicOrderExecutionViewModel @Inject constructor(
@@ -51,7 +53,7 @@ class MechanicOrderExecutionViewModel @Inject constructor(
             } else {
                 _state.update { 
                     it.copy(
-                        error = orderResult.exceptionOrNull()?.message ?: "Error loading data",
+                        error = orderResult.exceptionOrNull()?.message ?: tasksResult.exceptionOrNull()?.message ?: inventoryResult.exceptionOrNull()?.message ?: "Error al cargar la orden.",
                         isLoading = false
                     ) 
                 }
@@ -64,26 +66,35 @@ class MechanicOrderExecutionViewModel @Inject constructor(
     }
 
     fun startTask(taskId: Int) {
-        _state.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
-            mechanicRepository.startTask(taskId)
-            loadOrderData()
-        }
+        mutate { mechanicRepository.startTask(taskId) }
     }
 
     fun completeTask(taskId: Int) {
-        _state.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
-            mechanicRepository.completeTask(taskId, _state.value.diagnosisText)
-            loadOrderData()
-        }
+        mutate { mechanicRepository.completeTask(taskId, _state.value.diagnosisText) }
     }
 
     fun proposeTask(input: MechanicProposeTaskInput) {
-        _state.update { it.copy(isLoading = true) }
+        mutate { mechanicRepository.proposeTask(input) }
+    }
+
+    fun saveReport(taskId: Int, report: TaskReport, complete: Boolean) {
+        report.validationError()?.let { error -> _state.update { it.copy(actionError = error) }; return }
+        mutate { mechanicRepository.saveTaskReport(taskId, report, complete) }
+    }
+
+    private fun mutate(action: suspend () -> Result<Unit>) {
+        if (_state.value.isSubmitting) return
         viewModelScope.launch {
-            mechanicRepository.proposeTask(input)
-            loadOrderData()
+            _state.update { it.copy(isSubmitting = true, actionError = null) }
+            action().onSuccess {
+                _state.update { it.copy(isSubmitting = false, savedVersion = it.savedVersion + 1) }
+                loadOrderData()
+            }.onFailure { error ->
+                val message = if (error is HttpException && error.code() == 400)
+                    "No se pudo realizar la operación. Verifique aprobación, existencias y estado de la tarea."
+                    else error.message ?: "No se pudo guardar la tarea."
+                _state.update { it.copy(isSubmitting = false, actionError = message) }
+            }
         }
     }
 

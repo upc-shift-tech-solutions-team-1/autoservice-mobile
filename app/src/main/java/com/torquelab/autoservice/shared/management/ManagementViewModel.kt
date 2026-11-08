@@ -28,13 +28,15 @@ data class ManagementState(
     val saving: Boolean = false,
     val error: Int? = null,
     val message: Int? = null,
-    val savedVersion: Int = 0
+    val savedVersion: Int = 0,
+    val workOrders: List<com.torquelab.autoservice.workshop.domain.model.WorkshopWorkOrder> = emptyList()
 )
 
 @HiltViewModel
 class ManagementViewModel @Inject constructor(
     private val remoteFleet: RemoteFleetRepository,
-    private val remoteInventory: RemoteInventoryRepository
+    private val remoteInventory: RemoteInventoryRepository,
+    private val workshop: com.torquelab.autoservice.workshop.domain.repository.WorkshopRepository
 ) : ViewModel() {
     private var mode: Boolean? = null
     private lateinit var fleet: FleetRepository
@@ -62,6 +64,10 @@ class ManagementViewModel @Inject constructor(
                     mutable.update { it.copy(vehicles = vehicles) }
                     val owners = fleet.owners()
                     mutable.update { it.copy(owners = owners) }
+                    if (mode == false) {
+                        val orders = workshop.getWorkOrders().getOrThrow()
+                        mutable.update { it.copy(workOrders = orders) }
+                    }
                 } else {
                     val items = inventory.items()
                     mutable.update { it.copy(items = items) }
@@ -95,6 +101,22 @@ class ManagementViewModel @Inject constructor(
         mutate {
             val saved = inventory.receive(id, receipt)
             mutable.update { it.copy(items = it.items.map { old -> if (old.id == id) saved else old }) }
+        }
+    }
+
+    fun deleteItem(id: Int) {
+        if (mode != false) return
+        mutate {
+            remoteInventory.delete(id)
+            mutable.update { it.copy(items = it.items.filterNot { item -> item.id == id }) }
+        }
+    }
+
+    fun deleteVehicle(id: Int) {
+        if (mode != false) return
+        mutate {
+            remoteFleet.delete(id)
+            mutable.update { it.copy(vehicles = it.vehicles.filterNot { vehicle -> vehicle.id == id }) }
         }
     }
 

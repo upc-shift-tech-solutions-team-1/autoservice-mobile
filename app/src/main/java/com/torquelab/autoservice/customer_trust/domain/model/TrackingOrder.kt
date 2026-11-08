@@ -11,11 +11,24 @@ data class TrackingOrder(
     val status: TrackingOrderStatus,
     val tasks: List<TrackingTask>,
     val estimatedDelivery: String?,
-    val totalCost: Double?
+    val totalCost: Double?,
+    val reportedProgress: Int? = null,
+    val costs: TrackingCosts? = null,
+    val history: List<TrackingStage> = emptyList(),
+    val estimatedDateHistory: List<TrackingDateChange> = emptyList(),
+    val primaryMechanic: TrackingMechanic? = null
 ) {
     val progress: Int
-        get() = calculateTrackingProgress(status, tasks)
+        get() = reportedProgress?.coerceIn(0, 100) ?: calculateTrackingProgress(status, tasks)
 }
+
+data class TrackingCosts(val laborSubtotal: Double, val materialsSubtotal: Double, val total: Double)
+data class TrackingStage(val status: String, val changedAtUtc: String)
+data class TrackingDateChange(
+    val previousEstimatedDate: String?, val estimatedDate: String,
+    val reason: String?, val changedAtUtc: String
+)
+data class TrackingMechanic(val fullName: String, val specialty: String)
 
 data class TrackingTask(
     val id: Int,

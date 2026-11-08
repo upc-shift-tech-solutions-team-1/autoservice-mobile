@@ -22,6 +22,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalUriHandler
+import com.torquelab.autoservice.shared.domain.isWebEvidence
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -263,6 +266,34 @@ private fun TrackingOrderDetail(
             }
         }
 
+        item {
+            AutoServiceCard {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    order.primaryMechanic?.let {
+                        Text("Mecánico principal", style = MaterialTheme.typography.titleMedium)
+                        Text("${it.fullName} · ${it.specialty}")
+                    }
+                    order.costs?.let {
+                        Text("Detalle del importe", style = MaterialTheme.typography.titleMedium)
+                        Text("Mano de obra: ${it.laborSubtotal.asCurrency()}")
+                        Text("Repuestos: ${it.materialsSubtotal.asCurrency()}")
+                    }
+                    if (order.estimatedDateHistory.isNotEmpty()) {
+                        Text("Historial de fechas estimadas", style = MaterialTheme.typography.titleMedium)
+                        order.estimatedDateHistory.forEach { change ->
+                            Text(listOfNotNull(change.previousEstimatedDate, change.estimatedDate).joinToString(" → "))
+                            change.reason?.takeIf(String::isNotBlank)?.let { Text(it) }
+                        }
+                    }
+                    if (order.history.isNotEmpty()) {
+                        Text("Historial de estados", style = MaterialTheme.typography.titleMedium)
+                        order.history.forEach { stage ->
+                            Text("${orderStatusLabel(TrackingOrderStatus.fromApi(stage.status))} · ${stage.changedAtUtc.take(10)}")
+                        }
+                    }
+                }
+            }
+        }
         if (order.tasks.isNotEmpty()) {
             item {
                 Text(
@@ -279,6 +310,7 @@ private fun TrackingOrderDetail(
 
 @Composable
 private fun TrackingTaskItem(task: TrackingTask) {
+    val uriHandler = LocalUriHandler.current
     AutoServiceCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
@@ -316,6 +348,9 @@ private fun TrackingTaskItem(task: TrackingTask) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            task.evidenceRegistered?.takeIf(::isWebEvidence)?.let { link ->
+                TextButton(onClick = { runCatching { uriHandler.openUri(link.trim()) } }) { Text("Ver evidencia") }
             }
             task.laborPrice?.let {
                 Text(

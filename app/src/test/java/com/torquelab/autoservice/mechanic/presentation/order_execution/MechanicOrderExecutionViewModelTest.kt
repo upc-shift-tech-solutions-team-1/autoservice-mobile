@@ -195,4 +195,36 @@ class MechanicOrderExecutionViewModelTest {
 
         assertEquals(15, viewModel.getCurrentMechanicId())
     }
+
+    @Test
+    fun `failed start retains loaded order and shows actionable error without reporting success`() = runTest {
+        val order = mock(MechanicOrder::class.java)
+        whenever(mechanicRepository.getOrderById(orderId)).thenReturn(Result.success(order))
+        whenever(mechanicRepository.getTasksForOrder(orderId)).thenReturn(Result.success(emptyList()))
+        whenever(mechanicRepository.getInventoryItems()).thenReturn(Result.success(emptyList()))
+        whenever(mechanicRepository.startTask(101)).thenReturn(Result.failure(IllegalStateException("Stock insuficiente")))
+        val vm = createViewModel()
+        vm.startTask(101)
+        assertEquals("Stock insuficiente",vm.state.value.actionError)
+        assertEquals(order,vm.state.value.order)
+        assertEquals(0,vm.state.value.savedVersion)
+        assertFalse(vm.state.value.isSubmitting)
+    }
+
+    @Test
+    fun `invalid report never calls API and valid report increments saved version`() = runTest {
+        whenever(mechanicRepository.getOrderById(orderId)).thenReturn(Result.success(mock(MechanicOrder::class.java)))
+        whenever(mechanicRepository.getTasksForOrder(orderId)).thenReturn(Result.success(emptyList()))
+        whenever(mechanicRepository.getInventoryItems()).thenReturn(Result.success(emptyList()))
+        val report = com.torquelab.autoservice.mechanic.domain.model.TaskReport("Diagnóstico","Explicación","Privada","https://example.com/foto")
+        whenever(mechanicRepository.saveTaskReport(101,report,true)).thenReturn(Result.success(Unit))
+        val vm = createViewModel()
+        vm.saveReport(101,report.copy(evidenceRegistered="javascript:alert(1)"),true)
+        assertEquals(0,vm.state.value.savedVersion)
+        org.mockito.kotlin.verify(mechanicRepository,org.mockito.kotlin.never()).saveTaskReport(101,report.copy(evidenceRegistered="javascript:alert(1)"),true)
+        vm.saveReport(101,report,true)
+        verify(mechanicRepository).saveTaskReport(101,report,true)
+        assertEquals(1,vm.state.value.savedVersion)
+        assertNull(vm.state.value.actionError)
+    }
 }
