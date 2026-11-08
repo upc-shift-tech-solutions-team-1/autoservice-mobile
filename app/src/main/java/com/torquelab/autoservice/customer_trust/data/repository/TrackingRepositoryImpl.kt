@@ -10,53 +10,57 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import retrofit2.HttpException
 import javax.inject.Inject
+import com.torquelab.autoservice.shared.network.apiResult
 
 class TrackingRepositoryImpl @Inject constructor(
     private val api: TrackingApi
 ) : TrackingRepository {
-    override suspend fun getOrderByCode(code: String): Result<TrackingOrder> = runCatching {
-        val workOrders = try {
-            api.getOrderByCode(code)
+    override suspend fun getOrderByCode(code: String): Result<TrackingOrder> = apiResult {
+        val summary = try {
+            api.getSummary(code.trim())
         } catch (exception: HttpException) {
             if (exception.code() == 404) throw TrackingOrderNotFoundException()
             throw exception
         }
-        val workOrder = workOrders.firstOrNull()
-            ?: throw TrackingOrderNotFoundException()
+        // The public summary owns the tasks, total and progress; metadata is optional.
+        val workOrder = fetchOptional { api.getOrderByCode(code.trim()).firstOrNull() }
 
         coroutineScope {
             val vehicleRequest = async {
-                fetchOptional { api.getVehicle(workOrder.vehicleId) }
-            }
-            val tasksRequest = async {
-                fetchOptional { api.getTasksByOrder(workOrder.id) }.orEmpty()
+                workOrder?.let { fetchOptional { api.getVehicle(it.vehicleId) } }
             }
             val customerRequest = async {
-                fetchOptional { api.getCustomer(workOrder.customerId) }
+                workOrder?.let { fetchOptional { api.getCustomer(it.customerId) } }
             }
             val workshopRequest = async {
-                workOrder.workshopId
+                workOrder?.workshopId
                     ?.takeIf { it.isNotBlank() }
                     ?.let { id -> fetchOptional { api.getWorkshop(id) } }
             }
 
             val vehicle = vehicleRequest.await()
-            val tasks = tasksRequest.await().map { it.toDomain() }
+            // Public tasks have no database ID. These keys are local to the rendered list.
+            val tasks = summary.tasks.orEmpty().mapIndexed { index, task -> task.toDomain().copy(id = index + 1) }
             val customer = customerRequest.await()
             val workshop = workshopRequest.await()
 
             TrackingOrder(
-                trackingCode = workOrder.trackingCode.orEmpty(),
+                trackingCode = summary.trackingCode,
                 vehicleBrand = vehicle?.brand,
                 vehicleModel = vehicle?.model,
                 vehiclePlate = vehicle?.plate,
                 customerName = customer?.fullName,
                 workshopName = workshop?.name,
-                serviceDescription = workOrder.description,
-                status = TrackingOrderStatus.fromApi(workOrder.status),
+                serviceDescription = null,
+                status = TrackingOrderStatus.fromApi(summary.status),
                 tasks = tasks,
-                estimatedDelivery = workOrder.estimatedDate,
-                totalCost = workOrder.price
+                estimatedDelivery = summary.estimatedDate,
+                totalCost = summary.costs.total,
+                reportedProgress = summary.progressPercentage.toInt(),
+                costs = summary.costs,
+                history = summary.history.orEmpty(),
+                estimatedDateHistory = summary.estimatedDateHistory.orEmpty(),
+                primaryMechanic = summary.primaryMechanic
             )
         }
     }

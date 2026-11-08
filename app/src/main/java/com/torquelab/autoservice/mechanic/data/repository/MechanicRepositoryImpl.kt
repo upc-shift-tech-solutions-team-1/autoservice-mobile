@@ -16,6 +16,9 @@ import com.torquelab.autoservice.workshop.data.remote.dto.PatchTaskRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import com.torquelab.autoservice.mechanic.domain.model.TaskReport
+import com.torquelab.autoservice.shared.network.apiResult
 
 class MechanicRepositoryImpl @Inject constructor(
     private val workshopApi: WorkshopApi,
@@ -24,13 +27,25 @@ class MechanicRepositoryImpl @Inject constructor(
     private val inventoryApi: InventoryApi
 ) : MechanicRepository {
 
+    override suspend fun saveTaskReport(taskId: Int, report: TaskReport, complete: Boolean): Result<Unit> = apiResult {
+        report.validationError()?.let { error(it) }
+        taskApi.patchTask(taskId, PatchTaskRequest(
+            status = if (complete) "COMPLETED" else null,
+            technicalDiagnosis = report.technicalDiagnosis.trim(),
+            customerExplanation = report.customerExplanation.trim(),
+            internalObservation = report.internalObservation.trim(),
+            evidenceRegistered = report.evidenceRegistered.trim()
+        ))
+        Unit
+    }
+
     override suspend fun getOrdersForMechanic(mechanicId: Int): Result<List<MechanicOrder>> = withContext(Dispatchers.IO) {
         try {
-            val orders = workshopApi.getWorkOrders()
-                .filter { it.mechanicId == mechanicId }
-            
+            val allOrders = workshopApi.getWorkOrders()
             val vehicles = fleetApi.vehicles()
             val tasks = taskApi.getTasks()
+            val assignedOrderIds = tasks.filter { it.mechanicId == mechanicId }.map { it.workOrderId }.toSet()
+            val orders = allOrders.filter { it.mechanicId == mechanicId || it.id in assignedOrderIds }
 
             val mappedOrders = orders.map { order ->
                 val vehicle = vehicles.find { it.id == order.vehicleId }
@@ -38,7 +53,7 @@ class MechanicRepositoryImpl @Inject constructor(
 
                 val completedTasks = orderTasks.count { it.status == "COMPLETED" }
                 val totalTasks = orderTasks.size
-                
+
                 val progress = if (totalTasks > 0) {
                     (completedTasks.toDouble() / totalTasks * 100).toInt()
                 } else {
@@ -71,6 +86,8 @@ class MechanicRepositoryImpl @Inject constructor(
                 )
             }
             Result.success(mappedOrders)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -85,7 +102,7 @@ class MechanicRepositoryImpl @Inject constructor(
             val vehicle = vehicles.find { it.id == order.vehicleId }
             val completedTasks = tasks.count { it.status == "COMPLETED" }
             val totalTasks = tasks.size
-            
+
             val progress = if (totalTasks > 0) {
                 (completedTasks.toDouble() / totalTasks * 100).toInt()
             } else {
@@ -117,6 +134,8 @@ class MechanicRepositoryImpl @Inject constructor(
                 progress = progress
             )
             Result.success(mappedOrder)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -127,6 +146,8 @@ class MechanicRepositoryImpl @Inject constructor(
             val tasksDto = taskApi.getTasks(workOrderId = orderId)
             val mappedTasks = tasksDto.map { it.toMechanicTask() }
             Result.success(mappedTasks)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -136,6 +157,8 @@ class MechanicRepositoryImpl @Inject constructor(
         try {
             val items = inventoryApi.items()
             Result.success(items)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -152,15 +175,17 @@ class MechanicRepositoryImpl @Inject constructor(
                 laborPrice = 0.0,
                 technicalDiagnosis = input.technicalDiagnosis,
                 adminReviewStatus = "SUBMITTED",
-                parts = input.parts.map { 
+                parts = input.parts.map {
                     CreateTaskPartRequest(
                         inventoryItemId = it.inventoryItemId,
                         quantity = it.quantity
-                    ) 
+                    )
                 }
             )
             taskApi.createTask(request)
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -170,6 +195,8 @@ class MechanicRepositoryImpl @Inject constructor(
         try {
             taskApi.patchTask(taskId, PatchTaskRequest(status = "IN_PROGRESS"))
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -185,6 +212,8 @@ class MechanicRepositoryImpl @Inject constructor(
                 )
             )
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -49,7 +49,7 @@ class WorkshopOperationsApiIntegrationTest {
         fleetApi = retrofit.create(FleetApi::class.java)
         staffApi = retrofit.create(StaffApi::class.java)
 
-        repository = WorkshopRepositoryImpl(workshopApi, taskApi, customerApi, fleetApi, staffApi)
+        repository = WorkshopRepositoryImpl(workshopApi, taskApi, customerApi, fleetApi, staffApi, retrofit.create(com.torquelab.autoservice.inventory.data.InventoryApi::class.java))
     }
 
     @After
@@ -155,5 +155,48 @@ class WorkshopOperationsApiIntegrationTest {
         assertEquals(45.45, summary.marginPercentage, 0.001)
         assertEquals(25, summary.profitableOrders)
         assertEquals(2, summary.lossOrders)
+    }
+
+    @Test
+    fun `create order sends current API contract without client price or workshop ID`() = runTest {
+        mockWebServer.enqueue(MockResponse().setResponseCode(201).setBody("{\"id\":1}"))
+        val input = com.torquelab.autoservice.workshop.domain.model.CreateWorkOrderInput(7,3,2,"Reparación","2026-12-15")
+        assertTrue(repository.createWorkOrder(input).isSuccess)
+        val request = mockWebServer.takeRequest()
+        assertEquals("POST",request.method)
+        assertEquals("/workorders",request.path)
+        val body = gson.fromJson(request.body.readUtf8(),JsonObject::class.java)
+        assertEquals(7,body["vehicleId"].asInt)
+        assertEquals(3,body["customerId"].asInt)
+        assertEquals("2026-12-15",body["estimatedDate"].asString)
+        assertTrue(!body.has("price") && !body.has("workshopId"))
+    }
+
+    @Test
+    fun `postponement preserves fresh server price and sends reason and quality checklist`() = runTest {
+        mockWebServer.enqueue(MockResponse().setBody("""{"id":1,"estimatedDate":"2026-12-10","price":255}"""))
+        mockWebServer.enqueue(MockResponse().setBody("""{"id":1}"""))
+        val order = com.torquelab.autoservice.workshop.domain.model.WorkshopWorkOrder(1,7,3,"WO-1","Reparación",TaskStatus.IN_PROGRESS,
+            estimatedDate="2026-12-15",calculatedTotal=999.0,
+            checklist=com.torquelab.autoservice.workshop.domain.model.QualityChecklist(tasksCompleted=true))
+        assertTrue(repository.updateWorkOrder(order,"Repuesto en traslado").isSuccess)
+        assertEquals("GET",mockWebServer.takeRequest().method)
+        val request = mockWebServer.takeRequest()
+        assertEquals("PUT",request.method)
+        assertEquals("/workorders/1",request.path)
+        val body = gson.fromJson(request.body.readUtf8(),JsonObject::class.java)
+        assertEquals(255.0,body["price"].asDouble,0.001)
+        assertEquals("Repuesto en traslado",body["delayReason"].asString)
+        assertEquals("2026-12-15",body["estimatedDate"].asString)
+        assertTrue(body["tasksCompleted"].asBoolean)
+        assertTrue(!body["cleaningDone"].asBoolean)
+    }
+
+    @Test
+    fun `missing reason stops postponed date before writing to API`() = runTest {
+        mockWebServer.enqueue(MockResponse().setBody("""{"id":1,"estimatedDate":"2026-12-10","price":255}"""))
+        val order = com.torquelab.autoservice.workshop.domain.model.WorkshopWorkOrder(1,7,3,"WO-1","Reparación",TaskStatus.IN_PROGRESS,estimatedDate="2026-12-15")
+        assertTrue(repository.updateWorkOrder(order,null).isFailure)
+        assertEquals(1,mockWebServer.requestCount)
     }
 }
