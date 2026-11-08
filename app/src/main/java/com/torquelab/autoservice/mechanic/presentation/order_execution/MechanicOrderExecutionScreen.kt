@@ -2,6 +2,13 @@ package com.torquelab.autoservice.mechanic.presentation.order_execution
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.torquelab.autoservice.workshop.presentation.MaterialSelection
+import com.torquelab.autoservice.shared.ui.components.OperationDialog
+import com.torquelab.autoservice.shared.ui.components.OperationChoice
+import com.torquelab.autoservice.workshop.domain.model.TaskMaterialInput
+import com.torquelab.autoservice.mechanic.domain.model.TaskReport
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -46,7 +53,8 @@ fun MechanicOrderExecutionRoute(
         onUpdateDiagnosis = viewModel::updateDiagnosisText,
         onStartTask = viewModel::startTask,
         onCompleteTask = viewModel::completeTask,
-        onProposeTask = viewModel::proposeTask
+        onProposeTask = viewModel::proposeTask,
+        onSaveReport = viewModel::saveReport
     )
 }
 
@@ -60,9 +68,15 @@ fun MechanicOrderExecutionScreen(
     onUpdateDiagnosis: (String) -> Unit,
     onStartTask: (Int) -> Unit,
     onCompleteTask: (Int) -> Unit,
-    onProposeTask: (MechanicProposeTaskInput) -> Unit
+    onProposeTask: (MechanicProposeTaskInput) -> Unit,
+    onSaveReport: ((Int, TaskReport, Boolean) -> Unit)? = null
 ) {
     var showProposeDialog by remember { mutableStateOf(false) }
+    var reportTask by remember { mutableStateOf<MechanicTask?>(null) }
+    var completeReport by remember { mutableStateOf(false) }
+    val closed = state.order?.status in setOf("FINISHED", "DELIVERED", "CANCELLED")
+    LaunchedEffect(state.savedVersion) { showProposeDialog = false; reportTask = null }
+
 
     if (state.isLoading) {
         AutoServiceLoadingState()
@@ -100,6 +114,10 @@ fun MechanicOrderExecutionScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
+                if (state.isSubmitting) LinearProgressIndicator(Modifier.fillMaxWidth())
+                state.actionError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+            item {
                 Text(
                     text = "Información de la orden",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -120,7 +138,7 @@ fun MechanicOrderExecutionScreen(
                         Column {
                             val vehicleName = state.order?.vehicleName?.takeIf { it.isNotBlank() } ?: "Vehículo"
                             Text(text = vehicleName, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
-                            
+
                             val vehiclePlate = state.order?.vehiclePlate?.takeIf { it.isNotBlank() } ?: "Sin placa"
                             Text(text = vehiclePlate, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         }
@@ -163,7 +181,7 @@ fun MechanicOrderExecutionScreen(
                         Text("Tareas técnicas", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
                         Text("Ejecute o proponga tareas", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Button(onClick = { showProposeDialog = true }) {
+                    Button(onClick = { showProposeDialog = true }, enabled = !closed && !state.isSubmitting && mechanicId != null) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Proponer")
@@ -182,7 +200,12 @@ fun MechanicOrderExecutionScreen(
                     TaskCard(
                         task = task,
                         onStart = { onStartTask(task.id) },
-                        onComplete = { onCompleteTask(task.id) }
+                        onComplete = {
+                            if (onSaveReport == null) onCompleteTask(task.id)
+                            else { completeReport = true; reportTask = task }
+                        },
+                        enabled = !closed && !state.isSubmitting && task.mechanicId == mechanicId,
+                        onReport = { completeReport = false; reportTask = task }
                     )
                 }
 
@@ -196,6 +219,7 @@ fun MechanicOrderExecutionScreen(
     if (showProposeDialog) {
         ProposeTaskDialog(
             inventoryItems = state.inventoryItems,
+            busy = state.isSubmitting, error = state.actionError,
             onDismiss = { showProposeDialog = false },
             onPropose = { description, priority, time, parts ->
                 mechanicId?.let { mId ->
@@ -213,9 +237,23 @@ fun MechanicOrderExecutionScreen(
                         )
                     }
                 }
-                showProposeDialog = false
             }
         )
+    }
+    reportTask?.let { task ->
+        var diagnosis by remember(task.id) { mutableStateOf(task.technicalDiagnosis.ifBlank { state.diagnosisText }) }
+        var explanation by remember(task.id) { mutableStateOf(task.customerExplanation) }
+        var observation by remember(task.id) { mutableStateOf(task.internalObservation) }
+        var evidence by remember(task.id) { mutableStateOf(task.evidenceRegistered) }
+        val report = TaskReport(diagnosis, explanation, observation, evidence)
+        OperationDialog(if (completeReport) "Completar tarea" else "Informe de tarea", state.isSubmitting,
+            state.actionError ?: report.validationError(), report.validationError() == null, { reportTask = null },
+            { onSaveReport?.invoke(task.id, report, completeReport) }) {
+            OutlinedTextField(diagnosis, { diagnosis = it }, label = { Text("Diagnóstico técnico") })
+            OutlinedTextField(explanation, { explanation = it }, label = { Text("Explicación para el cliente") })
+            OutlinedTextField(observation, { observation = it }, label = { Text("Observación interna (opcional)") })
+            OutlinedTextField(evidence, { evidence = it }, label = { Text("Enlace de evidencia HTTP/HTTPS (opcional)") })
+        }
     }
 }
 
@@ -223,7 +261,9 @@ fun MechanicOrderExecutionScreen(
 fun TaskCard(
     task: MechanicTask,
     onStart: () -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    enabled: Boolean = true,
+    onReport: (() -> Unit)? = null
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -233,7 +273,7 @@ fun TaskCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(text = task.description, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
-                
+
                 val statusText = when {
                     task.status == TaskStatus.PENDING && task.adminReviewStatus == "SUBMITTED" -> "ESPERANDO"
                     task.status == TaskStatus.IN_PROGRESS -> "EN EJECUCIÓN"
@@ -254,7 +294,7 @@ fun TaskCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "${task.estimatedTime} min", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            
+
             if (task.parts.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "Materiales: ${task.parts.joinToString { "${it.quantity}x ${it.name}" }}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -262,9 +302,14 @@ fun TaskCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            if (task.technicalDiagnosis.isNotBlank()) Text("Diagnóstico: ${task.technicalDiagnosis}")
+            if (task.customerExplanation.isNotBlank()) Text("Explicación: ${task.customerExplanation}")
+            if (task.internalObservation.isNotBlank()) Text("Observación interna: ${task.internalObservation}")
+            if (task.evidenceRegistered.isNotBlank()) Text("Evidencia: ${task.evidenceRegistered}")
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                if (task.status == TaskStatus.PENDING && task.adminReviewStatus != "SUBMITTED") {
-                    Button(onClick = onStart) {
+                if (onReport != null && task.status == TaskStatus.IN_PROGRESS) TextButton(onClick = onReport, enabled = enabled) { Text("Informe") }
+                if (task.status == TaskStatus.PENDING && task.adminReviewStatus == "APPROVED") {
+                    Button(onClick = onStart, enabled = enabled) {
                         Icon(Icons.Default.PlayArrow, contentDescription = null)
                         Text("Iniciar")
                     }
@@ -272,6 +317,7 @@ fun TaskCard(
                 if (task.status == TaskStatus.IN_PROGRESS) {
                     Button(
                         onClick = onComplete,
+                        enabled = enabled,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
@@ -285,57 +331,24 @@ fun TaskCard(
 
 @Composable
 fun ProposeTaskDialog(
-    inventoryItems: List<InventoryItem>,
-    onDismiss: () -> Unit,
+    inventoryItems: List<InventoryItem>, onDismiss: () -> Unit,
+    busy: Boolean = false, error: String? = null,
     onPropose: (String, String, Int, List<MechanicTaskPartInput>) -> Unit
 ) {
     var description by remember { mutableStateOf("") }
     var priority by remember { mutableStateOf("MEDIUM") }
     var estimatedTime by remember { mutableStateOf("60") }
-    
-    // Simplification for the prototype: Just text inputs.
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Nueva propuesta técnica", color = MaterialTheme.colorScheme.onSurface) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Descripción") }
-                )
-                OutlinedTextField(
-                    value = priority,
-                    onValueChange = { priority = it },
-                    label = { Text("Prioridad (LOW/MEDIUM/HIGH)") }
-                )
-                OutlinedTextField(
-                    value = estimatedTime,
-                    onValueChange = { estimatedTime = it },
-                    label = { Text("Tiempo estimado (min)") }
-                )
-                Text("Nota: Se enviará sin materiales adicionales en el prototipo.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                onPropose(
-                    description,
-                    priority,
-                    estimatedTime.toIntOrNull() ?: 60,
-                    emptyList() // No parts for prototype simplification
-                )
-            }) {
-                Text("Enviar propuesta")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
+    var parts by remember { mutableStateOf(emptyList<TaskMaterialInput>()) }
+    OperationDialog("Nueva propuesta técnica", busy, error,
+        description.isNotBlank() && (estimatedTime.toIntOrNull() ?: 0) > 0, onDismiss, {
+            onPropose(description.trim(), priority, estimatedTime.toInt(), parts.map { MechanicTaskPartInput(it.inventoryItemId, it.quantity) })
+        }, "Enviar propuesta") {
+        OutlinedTextField(description, { description = it }, label = { Text("Descripción") })
+        OperationChoice("Prioridad", priority, listOf("LOW", "MEDIUM", "HIGH").map { it to it }, { priority = it })
+        OutlinedTextField(estimatedTime, { estimatedTime = it }, label = { Text("Tiempo estimado (min)") })
+        MaterialSelection(inventoryItems, parts, { parts = it })
+        Text("El administrador cotiza y aprueba la propuesta antes de iniciarla.")
+    }
 }
 
 @Composable

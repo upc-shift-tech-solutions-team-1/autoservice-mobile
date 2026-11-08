@@ -33,10 +33,12 @@ fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: Manageme
     var itemForm by remember { mutableStateOf<InventoryItem?>(null) }
     var receiptForm by remember { mutableStateOf<InventoryItem?>(null) }
     var detail by remember { mutableStateOf<Vehicle?>(null) }
+    var deletingItem by remember { mutableStateOf<InventoryItem?>(null) }
+    var deletingVehicle by remember { mutableStateOf<Vehicle?>(null) }
     var query by rememberSaveable(isFleet) { mutableStateOf("") }
     var filter by rememberSaveable(isFleet) { mutableStateOf("") }
     LaunchedEffect(state.savedVersion) {
-        vehicleForm = null; itemForm = null; receiptForm = null
+        vehicleForm = null; itemForm = null; receiptForm = null; deletingItem = null; deletingVehicle = null
     }
     LaunchedEffect(isFleet) {
         vehicleForm = null; itemForm = null; receiptForm = null; detail = null
@@ -62,6 +64,19 @@ fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: Manageme
                 Text(stringResource(R.string.m_color) + ": " + vehicle.color)
                 Text(stringResource(R.string.m_owner) + ": " + (state.owners.find { it.id == vehicle.customerId }?.fullName ?: "#${vehicle.customerId}"))
                 Text(statusLabel(vehicle.status))
+                val orders = state.workOrders.filter { it.vehicleId == vehicle.id }
+                Text("Historial de órdenes", style = MaterialTheme.typography.titleMedium)
+                if (orders.isEmpty()) Text("Sin órdenes registradas.")
+                orders.forEach { order ->
+                    HorizontalDivider()
+                    Text("${order.trackingCode} · ${order.status.toApiValue()} · ${order.progress}%")
+                    Text("Entrega estimada: ${order.estimatedDate}")
+                    Text("Total: S/ ${"%.2f".format(order.calculatedTotal)}")
+                    order.tasks.forEach { task ->
+                        Text("${task.description} · ${task.status.toApiValue()}")
+                        if (task.technicalDiagnosis.isNotBlank()) Text(task.technicalDiagnosis)
+                    }
+                }
                 Button(onClick = { detail = null; vehicleForm = vehicle }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.m_edit)) }
             }
         }
@@ -102,6 +117,7 @@ fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: Manageme
                                 Row {
                                     TextButton(onClick = { detail = vehicle }) { Text(stringResource(R.string.m_details)) }
                                     TextButton(onClick = { viewModel.clearFeedback(); vehicleForm = vehicle }) { Text(stringResource(R.string.m_edit)) }
+                                    TextButton(onClick = { viewModel.clearFeedback(); deletingVehicle = vehicle }, enabled = !demo && !state.saving) { Text("Eliminar") }
                                 }
                             }
                         }
@@ -123,6 +139,7 @@ fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: Manageme
                                 Row {
                                     TextButton(onClick = { viewModel.clearFeedback(); itemForm = item }) { Text(stringResource(R.string.m_edit)) }
                                     TextButton(onClick = { viewModel.clearFeedback(); receiptForm = item }) { Text(stringResource(R.string.m_receive)) }
+                                    TextButton(onClick = { deletingItem = item }, enabled = !demo && !state.saving) { Text("Eliminar") }
                                 }
                             }
                         }
@@ -131,6 +148,21 @@ fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: Manageme
             }
         }
     }
+    deletingItem?.let { item -> DeleteInventoryDialog(item, state, { deletingItem = null }, { viewModel.deleteItem(item.id) }) }
+    deletingVehicle?.let { vehicle ->
+        AlertDialog(onDismissRequest = { if (!state.saving) deletingVehicle = null }, title = { Text("Eliminar vehículo") },
+            text = { Column { Text("¿Eliminar el vehículo ${vehicle.plate}? El servidor verificará sus relaciones."); Feedback(state) } },
+            confirmButton = { TextButton(onClick = { viewModel.deleteVehicle(vehicle.id) }, enabled = !state.saving) { Text("Eliminar") } },
+            dismissButton = { TextButton(onClick = { deletingVehicle = null }, enabled = !state.saving) { Text("Cancelar") } })
+    }
+}
+
+@Composable
+private fun DeleteInventoryDialog(item: InventoryItem, state: ManagementState, onDismiss: () -> Unit, onDelete: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Eliminar repuesto") },
+        text = { Column { Text("¿Eliminar ${item.name}? El servidor rechazará la operación si el repuesto está en uso."); Feedback(state) } },
+        confirmButton = { TextButton(onClick = onDelete, enabled = !state.saving) { Text("Eliminar") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !state.saving) { Text("Cancelar") } })
 }
 
 private fun money(value: BigDecimal): String = NumberFormat.getCurrencyInstance(Locale("es", "PE")).format(value)
@@ -207,6 +239,10 @@ private fun money(value: BigDecimal): String = NumberFormat.getCurrencyInstance(
     var purchase by rememberSaveable(original.id) { mutableStateOf(original.purchasePrice.toPlainString()) }
     var minimum by rememberSaveable(original.id) { mutableStateOf(original.minStock.toString()) }
     var specification by rememberSaveable(original.id) { mutableStateOf(original.specification) }
+    var quality by rememberSaveable(original.id) { mutableStateOf(original.qualityTier) }
+    var presentation by rememberSaveable(original.id) { mutableStateOf(original.presentation) }
+    var measure by rememberSaveable(original.id) { mutableStateOf(original.unitMeasure) }
+    var image by rememberSaveable(original.id) { mutableStateOf(original.image) }
     var invalid by remember { mutableStateOf(false) }
     EditorShell(R.string.m_inventory_form, state, onClose) {
         Field(R.string.m_name, name, { name = it }, !state.saving)
@@ -216,6 +252,10 @@ private fun money(value: BigDecimal): String = NumberFormat.getCurrencyInstance(
         Field(R.string.m_sale_price, sale, { sale = it }, !state.saving, true)
         Field(R.string.m_min_stock, minimum, { minimum = it }, !state.saving, true)
         Field(R.string.m_specification, specification, { specification = it }, !state.saving)
+        ChoiceField("Gama", quality, listOf("ECONOMY" to "Económica", "STANDARD" to "Estándar", "PREMIUM" to "Premium"), { quality = it }, !state.saving)
+        OutlinedTextField(presentation, { presentation = it }, label = { Text("Presentación") }, enabled = !state.saving)
+        OutlinedTextField(measure, { measure = it }, label = { Text("Unidad de medida") }, enabled = !state.saving)
+        OutlinedTextField(image, { image = it }, label = { Text("URL de imagen (opcional)") }, enabled = !state.saving)
         Text(stringResource(R.string.m_stock_note))
         if (invalid) Text(stringResource(R.string.m_item_invalid), color = MaterialTheme.colorScheme.error)
         Button(onClick = {
@@ -223,7 +263,7 @@ private fun money(value: BigDecimal): String = NumberFormat.getCurrencyInstance(
             val purchasePrice = purchase.replace(',', '.').toBigDecimalOrNull()
             val minStock = minimum.toIntOrNull()
             invalid = unitPrice == null || purchasePrice == null || minStock == null
-            if (!invalid) onSave(original.copy(name = name, brand = brand, category = category, unitPrice = unitPrice!!, purchasePrice = purchasePrice!!, minStock = minStock!!, specification = specification))
+            if (!invalid) onSave(original.copy(name = name, brand = brand, category = category, unitPrice = unitPrice!!, purchasePrice = purchasePrice!!, minStock = minStock!!, specification = specification, qualityTier = quality, presentation = presentation.trim(), unitMeasure = measure.trim(), image = image.trim()))
         }, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.m_save)) }
     }
 }

@@ -1,237 +1,84 @@
-
 package com.torquelab.autoservice.customer_trust
 
 import com.torquelab.autoservice.customer_trust.data.remote.TrackingApi
 import com.torquelab.autoservice.customer_trust.data.repository.TrackingRepositoryImpl
-import com.torquelab.autoservice.customer_trust.domain.model.TrackingOrderNotFoundException
-import com.torquelab.autoservice.customer_trust.domain.model.TrackingOrderStatus
-import com.torquelab.autoservice.customer_trust.domain.model.TrackingTaskStatus
+import com.torquelab.autoservice.customer_trust.domain.model.*
 import kotlinx.coroutines.test.runTest
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import okhttp3.mockwebserver.*
+import org.junit.*
+import org.junit.Assert.*
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class TrackingApiIntegrationTest {
-
     private lateinit var server: MockWebServer
     private lateinit var repository: TrackingRepositoryImpl
-
-    @Before
-    fun setUp() {
-        server = MockWebServer()
-        server.start()
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl(server.url("/api/v1/"))
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        repository = TrackingRepositoryImpl(
-            retrofit.create(TrackingApi::class.java)
-        )
+    @Before fun setup() {
+        server = MockWebServer().apply { start() }
+        repository = TrackingRepositoryImpl(Retrofit.Builder().baseUrl(server.url("/api/v1/"))
+            .addConverterFactory(GsonConverterFactory.create()).build().create(TrackingApi::class.java))
     }
-
-    @After
-    fun tearDown() {
-        server.shutdown()
-    }
-
-    private fun jsonResponse(
-        body: String,
-        code: Int = 200
-    ): MockResponse =
-        MockResponse()
-            .setResponseCode(code)
-            .setHeader("Content-Type", "application/json")
-            .setBody(body)
-
-    @Test
-    fun `valid tracking code should return complete order with related data`() = runTest {
-        // Arrange
+    @After fun close() { server.shutdown() }
+    private fun response(body: String, code: Int = 200) = MockResponse().setResponseCode(code).setHeader("Content-Type", "application/json").setBody(body)
+    private val summary = """{
+        "trackingCode":"WO-TEST", "status":"IN_PROGRESS", "progressPercentage":50,
+        "estimatedDate":"2026-11-15",
+        "tasks":[{"description":"Cambio de aceite","status":"COMPLETED","technicalDiagnosis":"Aceite degradado",
+          "customerExplanation":"Se reemplazó el aceite","laborPrice":80,"materialsCost":20,"totalCost":100,
+          "parts":[{"name":"Aceite","quantity":1,"unitPrice":20}]}],
+        "costs":{"laborSubtotal":80,"materialsSubtotal":20,"total":100},
+        "history":[{"status":"PENDING","changedAtUtc":"2026-11-01T12:00:00Z"}],
+        "estimatedDateHistory":[{"previousEstimatedDate":"2026-11-14","estimatedDate":"2026-11-15","reason":"Repuesto en traslado","changedAtUtc":"2026-11-02T12:00:00Z"}],
+        "primaryMechanic":{"fullName":"Ana Pérez","specialty":"Motor"}
+    }"""
+    private fun configure(metadataFails: Boolean = false) {
         server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse {
-                return when (request.requestUrl?.encodedPath) {
-                    "/api/v1/tracking/workorders" -> jsonResponse(
-                        """
-                        [{
-                          "id": 50,
-                          "trackingCode": "TRK-100",
-                          "workshopId": "T-01",
-                          "vehicleId": 10,
-                          "customerId": 20,
-                          "description": "Mantenimiento preventivo",
-                          "status": "IN_PROGRESS",
-                          "price": 350.0,
-                          "estimatedDate": "2026-10-30"
-                        }]
-                        """.trimIndent()
-                    )
-
-                    "/api/v1/tracking/vehicles/10" -> jsonResponse(
-                        """
-                        {
-                          "brand": "Toyota",
-                          "model": "Corolla",
-                          "plate": "ABC-123"
-                        }
-                        """.trimIndent()
-                    )
-
-                    "/api/v1/tracking/tasks" -> jsonResponse(
-                        """
-                        [{
-                          "id": 1,
-                          "description": "Cambio de aceite",
-                          "status": "COMPLETED",
-                          "technicalDiagnosis": "Aceite desgastado",
-                          "customerExplanation": "Se reemplazo el aceite",
-                          "evidenceRegistered": null,
-                          "laborPrice": 80.0,
-                          "parts": []
-                        }]
-                        """.trimIndent()
-                    )
-
-                    "/api/v1/tracking/customers/20" -> jsonResponse(
-                        """{"fullName":"Juan Perez"}"""
-                    )
-
-                    "/api/v1/tracking/workshops/T-01" -> jsonResponse(
-                        """{"name":"AutoService Lima"}"""
-                    )
-
-                    else -> jsonResponse(
-                        """{"message":"Ruta no encontrada"}""",
-                        404
-                    )
-                }
+            override fun dispatch(request: RecordedRequest): MockResponse = when(request.requestUrl!!.encodedPath) {
+                "/api/v1/tracking/summary" -> response(summary)
+                "/api/v1/tracking/workorders" -> response("""[{"trackingCode":"WO-TEST","vehicleId":10,"customerId":20,"workshopId":"WS-01","price":999}]""")
+                "/api/v1/tracking/vehicles/10" -> if (metadataFails) response("{}",500) else response("""{"brand":"Toyota","model":"Corolla","plate":"ABC-123"}""")
+                "/api/v1/tracking/customers/20" -> response("""{"fullName":"Juan Pérez"}""")
+                "/api/v1/tracking/workshops/WS-01" -> response("""{"name":"Taller Lima"}""")
+                else -> response("{}",404)
             }
         }
-
-        // Act
-        val result = repository.getOrderByCode("TRK-100")
-
-        // Assert
-        assertTrue(result.isSuccess)
-
-        val order = result.getOrThrow()
-
-        assertEquals("TRK-100", order.trackingCode)
-        assertEquals("Toyota", order.vehicleBrand)
-        assertEquals("Corolla", order.vehicleModel)
-        assertEquals("ABC-123", order.vehiclePlate)
-        assertEquals("Juan Perez", order.customerName)
-        assertEquals("AutoService Lima", order.workshopName)
-        assertEquals("Mantenimiento preventivo", order.serviceDescription)
-        assertEquals(TrackingOrderStatus.IN_PROGRESS, order.status)
-
-        assertEquals(1, order.tasks.size)
-        assertEquals("Cambio de aceite", order.tasks.first().description)
-        assertEquals(TrackingTaskStatus.COMPLETED, order.tasks.first().status)
-
-        assertEquals(100, order.progress)
-        assertEquals(350.0, order.totalCost!!, 0.001)
-        assertEquals("2026-10-30", order.estimatedDelivery)
-        assertEquals(5, server.requestCount)
     }
-
-    @Test
-    fun `unknown tracking code should return business not found error`() = runTest {
-        // Arrange
-        server.enqueue(
-            jsonResponse(
-                """{"message":"Orden no encontrada"}""",
-                404
-            )
-        )
-
-        // Act
-        val result = repository.getOrderByCode("TRK-404")
-
-        // Assert
-        assertTrue(result.isFailure)
-        assertTrue(
-            result.exceptionOrNull() is TrackingOrderNotFoundException
-        )
-
-        val request = server.takeRequest()
-
-        assertEquals("GET", request.method)
-        assertEquals(
-            "/api/v1/tracking/workorders?trackingCode=TRK-404",
-            request.path
-        )
-        assertEquals(1, server.requestCount)
+    @Test fun `summary owns progress and total and exposes dates mechanic and tasks without internal IDs`() = runTest {
+        configure()
+        val order = repository.getOrderByCode("WO-TEST").getOrThrow()
+        assertEquals("ABC-123",order.vehiclePlate)
+        assertEquals("Juan Pérez",order.customerName)
+        assertEquals(50,order.progress) // One completed row must not replace server progress with 100.
+        assertEquals(100.0,order.totalCost!!,0.001) // Metadata price 999 is never used.
+        assertEquals("Repuesto en traslado",order.estimatedDateHistory.single().reason)
+        assertEquals("Ana Pérez",order.primaryMechanic!!.fullName)
+        assertEquals("Motor",order.primaryMechanic!!.specialty)
+        assertEquals(TrackingTaskStatus.COMPLETED,order.tasks.single().status)
+        assertEquals(1,order.tasks.single().id) // Local display key, not a database ID.
+        assertEquals("Aceite",order.tasks.single().parts.single().name)
+        assertEquals(5,server.requestCount)
+        val requests = (1..server.requestCount).map { server.takeRequest() }
+        assertTrue(requests.none { it.path!!.contains("tracking/tasks") })
+        assertTrue(requests.all { it.getHeader("Authorization") == null })
     }
-
-    @Test
-    fun `tracking should preserve main order when vehicle service fails`() = runTest {
-        // Arrange
-        server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse {
-                return when (request.requestUrl?.encodedPath) {
-                    "/api/v1/tracking/workorders" -> jsonResponse(
-                        """
-                        [{
-                          "id": 60,
-                          "trackingCode": "TRK-200",
-                          "workshopId": null,
-                          "vehicleId": 99,
-                          "customerId": 20,
-                          "description": "Revision general",
-                          "status": "PENDING",
-                          "price": 150.0,
-                          "estimatedDate": null
-                        }]
-                        """.trimIndent()
-                    )
-
-                    "/api/v1/tracking/vehicles/99" -> jsonResponse(
-                        """{"message":"Servicio no disponible"}""",
-                        500
-                    )
-
-                    "/api/v1/tracking/tasks" -> jsonResponse("[]")
-
-                    "/api/v1/tracking/customers/20" -> jsonResponse(
-                        """{"fullName":"Juan Perez"}"""
-                    )
-
-                    else -> jsonResponse(
-                        """{"message":"Ruta no encontrada"}""",
-                        404
-                    )
-                }
-            }
-        }
-
-        // Act
-        val result = repository.getOrderByCode("TRK-200")
-
-        // Assert
-        assertTrue(result.isSuccess)
-
-        val order = result.getOrThrow()
-
-        assertEquals("TRK-200", order.trackingCode)
-        assertEquals(TrackingOrderStatus.PENDING, order.status)
-        assertEquals("Juan Perez", order.customerName)
+    @Test fun `unknown code returns not found from summary without metadata requests`() = runTest {
+        server.enqueue(response("{}",404))
+        val result = repository.getOrderByCode("WO-NOT-FOUND")
+        assertTrue(result.exceptionOrNull() is TrackingOrderNotFoundException)
+        assertEquals("/api/v1/tracking/summary?trackingCode=WO-NOT-FOUND",server.takeRequest().path)
+        assertEquals(1,server.requestCount)
+    }
+    @Test fun `missing vehicle metadata does not hide summary data`() = runTest {
+        configure(metadataFails = true)
+        val order = repository.getOrderByCode("WO-TEST").getOrThrow()
         assertNull(order.vehicleBrand)
-        assertNull(order.vehicleModel)
-        assertNull(order.vehiclePlate)
-        assertNull(order.workshopName)
-        assertTrue(order.tasks.isEmpty())
-        assertEquals(0, order.progress)
-        assertEquals(4, server.requestCount)
+        assertEquals(100.0,order.totalCost!!,0.001)
+        assertEquals(1,order.tasks.size)
+        assertEquals("2026-11-15",order.estimatedDelivery)
+    }
+    @Test fun `unavailable summary is an error not a fake empty order`() = runTest {
+        server.enqueue(response("{}",503))
+        assertTrue(repository.getOrderByCode("WO-TEST").isFailure)
+        assertEquals(1,server.requestCount)
     }
 }
