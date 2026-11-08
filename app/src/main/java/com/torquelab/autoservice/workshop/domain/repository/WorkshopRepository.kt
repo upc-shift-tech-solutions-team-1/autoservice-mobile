@@ -6,6 +6,9 @@ import com.torquelab.autoservice.workshop.domain.model.UpdateTaskInput
 import com.torquelab.autoservice.workshop.domain.model.WorkshopWorkOrder
 
 interface WorkshopRepository {
+    suspend fun getOptions(): Result<com.torquelab.autoservice.workshop.domain.model.WorkshopOptions>
+    suspend fun createWorkOrder(input: com.torquelab.autoservice.workshop.domain.model.CreateWorkOrderInput): Result<Unit>
+    suspend fun updateWorkOrder(order: WorkshopWorkOrder, delayReason: String? = null): Result<Unit>
 
     suspend fun getWorkOrders(): Result<List<WorkshopWorkOrder>>
 

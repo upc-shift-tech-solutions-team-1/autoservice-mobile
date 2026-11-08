@@ -97,6 +97,10 @@
     <string name="staff_name">Name</string>
     <string name="staff_email">Email</string>
     <string name="staff_specialty">Specialty</string>
+    <string name="staff_specialty_general">General Mechanic</string>
+    <string name="staff_specialty_electrical">Automotive Electrician</string>
+    <string name="staff_specialty_brakes">Brakes &amp; Suspension</string>
+    <string name="staff_specialty_tires">Tire Specialist</string>
     <string name="staff_availability">Availability</string>
     <string name="staff_availability_detail">Availability: %1$s</string>
     <string name="staff_available">Available</string>
