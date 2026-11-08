@@ -4,6 +4,7 @@ enum class TaskStatus {
     PENDING,
     IN_PROGRESS,
     COMPLETED,
+    FINISHED,
     DELIVERED,
     CANCELLED,
     UNKNOWN;
@@ -15,6 +16,7 @@ enum class TaskStatus {
             "PENDING" -> PENDING
             "IN_PROGRESS", "IN PROGRESS" -> IN_PROGRESS
             "COMPLETED" -> COMPLETED
+            "FINISHED" -> FINISHED
             "DELIVERED" -> DELIVERED
             "CANCELLED", "CANCELED" -> CANCELLED
             else -> UNKNOWN
@@ -25,6 +27,7 @@ enum class TaskStatus {
         PENDING -> "PENDING"
         IN_PROGRESS -> "IN_PROGRESS"
         COMPLETED -> "COMPLETED"
+        FINISHED -> "FINISHED"
         DELIVERED -> "DELIVERED"
         CANCELLED -> "CANCELLED"
         UNKNOWN -> "PENDING"

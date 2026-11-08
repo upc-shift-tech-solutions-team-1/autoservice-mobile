@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.torquelab.autoservice.shared.session.SessionManager
 import com.torquelab.autoservice.shared.session.UserSession
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SplashScreen(
@@ -22,13 +24,13 @@ fun SplashScreen(
         val session =
             sessionManager.restoreSession()
 
-        if (session != null) {
-
-            onAuthenticated(session)
-
-        } else {
-
-            onUnauthenticated()
+        // Navigation mutates LifecycleRegistry and must always run on Android's main thread.
+        withContext(Dispatchers.Main.immediate) {
+            if (session != null) {
+                onAuthenticated(session)
+            } else {
+                onUnauthenticated()
+            }
         }
     }
 
