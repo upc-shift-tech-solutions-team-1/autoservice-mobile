@@ -69,8 +69,18 @@ class ManagementViewModel @Inject constructor(
                         mutable.update { it.copy(workOrders = orders) }
                     }
                 } else {
+                    // Clear previous task data before refreshing inventory.
+                    mutable.update { it.copy(workOrders = emptyList()) }
+
                     val items = inventory.items()
                     mutable.update { it.copy(items = items) }
+
+                    // Use actual workshop orders in the authenticated flow.
+                    // Demo inventory must not be mixed with real tasks.
+                    if (mode == false) {
+                        val orders = workshop.getWorkOrders().getOrThrow()
+                        mutable.update { it.copy(workOrders = orders) }
+                    }
                 }
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) { mutable.update { it.copy(error = errorFor(e)) }
