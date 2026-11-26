@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sa_title">Parts availability for a task</string>
+    <string name="sa_description">Select a repair task to compare required parts with current inventory.</string>
+    <string name="sa_select_task">Select task</string>
+    <string name="sa_no_tasks">No tasks with required parts are available.</string>
+    <string name="sa_order_task">Order #%1$d · Task #%2$d: %3$s</string>
+
+    <string name="sa_available">Available: %1$d</string>
+    <string name="sa_required">Required: %1$d</string>
+    <string name="sa_sufficient">Sufficient stock</string>
+    <string name="sa_insufficient">Insufficient stock · Missing: %1$d</string>
+    <string name="sa_unknown_stock">Stock could not be verified</string>
+    <string name="sa_invalid_quantity">Invalid required quantity</string>
+    <string name="sa_invalid_stock">Invalid inventory quantity</string>
+
+    <string name="sa_read_only">This check does not reserve or consume stock. Availability may change.</string>
+    <string name="sa_refresh_hint">Refresh inventory before making an operational decision.</string>
+    <string name="sa_demo_notice">Demonstration data. Not connected to real repair tasks.</string>
+</resources>
