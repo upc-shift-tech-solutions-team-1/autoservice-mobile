@@ -21,6 +21,7 @@ import com.torquelab.autoservice.inventory.domain.*
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Locale
+import com.torquelab.autoservice.inventory.presentation.TaskPartsAvailabilityPanel
 
 @Composable
 fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: ManagementViewModel = hiltViewModel(key = if (isFleet) "fleet-management" else "inventory-management")) {
@@ -123,6 +124,15 @@ fun ManagementRoute(isFleet: Boolean, demo: Boolean = false, viewModel: Manageme
                         }
                     }
                 } else {
+                    if (!state.loading && state.error == null) {
+                        item {
+                            TaskPartsAvailabilityPanel(
+                                inventory = state.items,
+                                workOrders = state.workOrders
+                            )
+                        }
+                    }
+
                     val inventory = state.items.filter { it.matches(query) && (filter.isEmpty() || it.lowStock) }
                     if (inventory.isEmpty() && !state.loading) item { EmptyResult() }
                     items(inventory, key = { it.id }) { item ->
