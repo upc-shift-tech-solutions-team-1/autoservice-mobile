@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sa_title">Disponibilidad de repuestos para una tarea</string>
+    <string name="sa_description">Selecciona una tarea de reparación para comparar los repuestos requeridos con las existencias actuales.</string>
+    <string name="sa_select_task">Seleccionar tarea</string>
+    <string name="sa_no_tasks">No hay tareas con repuestos requeridos disponibles para consultar.</string>
+    <string name="sa_order_task">Orden #%1$d · Tarea #%2$d: %3$s</string>
+
+    <string name="sa_available">Disponible: %1$d</string>
+    <string name="sa_required">Requerido: %1$d</string>
+    <string name="sa_sufficient">Stock suficiente</string>
+    <string name="sa_insufficient">Stock insuficiente · Faltan: %1$d</string>
+    <string name="sa_unknown_stock">No se pudo verificar el stock</string>
+    <string name="sa_invalid_quantity">Cantidad requerida no válida</string>
+    <string name="sa_invalid_stock">Cantidad de inventario no válida</string>
+
+    <string name="sa_read_only">Esta consulta no reserva ni consume existencias. La disponibilidad puede cambiar.</string>
+    <string name="sa_refresh_hint">Actualiza el inventario antes de tomar una decisión operativa.</string>
+    <string name="sa_demo_notice">Datos de demostración. Sin conexión con tareas de reparación reales.</string>
+</resources>
